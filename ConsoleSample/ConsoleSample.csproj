@@ -9,4 +9,13 @@
     <PackageReference Include="QuickFIXn.FIX4.4" Version="1.10.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Config-dev.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="FIX44-CSERVER.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
