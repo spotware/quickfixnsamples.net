@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace ConsoleSample
 {
@@ -21,10 +22,12 @@ namespace ConsoleSample
 
                 var defaultSettings = settings.Get();
 
+                var sessionId = settings.GetSessions().First();
+
                 var username = defaultSettings.GetString("Username");
                 var password = defaultSettings.GetString("Password");
 
-                QuickFixNApp application = new(username, password);
+                QuickFixNApp application = new(username, password, sessionId);
                 QuickFix.IMessageStoreFactory storeFactory = new QuickFix.FileStoreFactory(settings);
                 QuickFix.ILogFactory logFactory = new QuickFix.ScreenLogFactory(settings);
                 QuickFix.Transport.SocketInitiator initiator = new(application, storeFactory, settings, logFactory);

@@ -17,11 +17,13 @@ namespace ConsoleSample
 
         private readonly string _username;
         private readonly string _password;
+        private readonly SessionID _sessionId;
 
-        public QuickFixNApp(string username, string password)
+        public QuickFixNApp(string username, string password, SessionID sessionId)
         {
             _username = username;
             _password = password;
+            _sessionId = sessionId;
         }
 
         #region IApplication interface overrides
@@ -47,16 +49,19 @@ namespace ConsoleSample
 
         public void ToAdmin(Message message, SessionID sessionID)
         {
+            message.SetField(new StringField(49, _sessionId.SenderCompID));
+            message.SetField(new StringField(56, _sessionId.TargetCompID));
+            message.SetField(new StringField(50, _sessionId.SenderSubID));
+            message.SetField(new StringField(52, DateTimeOffset.UtcNow.ToString("yyyyMMdd-HH:mm:ss")));
             message.SetField(new StringField(553, _username));
             message.SetField(new StringField(554, _password));
         }
 
         public void FromApp(Message message, SessionID sessionID)
         {
-            Console.WriteLine("IN:  " + message.ToString());
             try
             {
-                Crack(message, sessionID);
+                //Crack(message, sessionID);
             }
             catch (Exception ex)
             {
@@ -64,6 +69,8 @@ namespace ConsoleSample
                 Console.WriteLine(ex.ToString());
                 Console.WriteLine(ex.StackTrace);
             }
+
+            Console.WriteLine("--------------------------------------------");
         }
 
         public void ToApp(Message message, SessionID sessionID)
@@ -108,7 +115,9 @@ namespace ConsoleSample
             {
                 try
                 {
-                    char action = QueryAction();
+                    var cmd = QueryAction();
+                    var action = cmd[0].ToCharArray()[0];
+
                     if (action == '1')
                         QueryEnterOrder();
                     else if (action == '2')
@@ -116,7 +125,7 @@ namespace ConsoleSample
                     else if (action == '3')
                         QueryReplaceOrder();
                     else if (action == '4')
-                        QueryMarketDataRequest();
+                        QueryMarketDataRequest(cmd.Skip(1));
                     else if (action == 'g')
                     {
                         if (MyInitiator.IsStopped)
@@ -149,10 +158,12 @@ namespace ConsoleSample
             Console.WriteLine("Program shutdown.");
         }
 
-        private void SendMessage(Message m)
+        private void SendMessage(Message message)
         {
             if (_session != null)
-                _session.Send(m);
+            {
+                _session.Send(message);
+            }
             else
             {
                 // This probably won't ever happen.
@@ -160,14 +171,14 @@ namespace ConsoleSample
             }
         }
 
-        private char QueryAction()
+        private string[] QueryAction()
         {
             // Commands 'g' and 'x' are intentionally hidden.
             Console.Write("\n"
                 + "1) Enter Order\n"
                 + "2) Cancel Order\n"
                 + "3) Replace Order\n"
-                + "4) Market data test\n"
+                + "4) Market data (Space symold ID, ex: 4 1)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
@@ -175,10 +186,17 @@ namespace ConsoleSample
             HashSet<string> validActions = new HashSet<string>("1,2,3,4,q,Q,g,x".Split(','));
 
             string cmd = Console.ReadLine().Trim();
-            if (cmd.Length != 1 || validActions.Contains(cmd) == false)
+
+            if (string.IsNullOrWhiteSpace(cmd)) return default;
+
+            var cmdSplit = cmd.Split(' ');
+
+            var action = cmdSplit[0];
+
+            if (action.Length != 1 || validActions.Contains(action) == false)
                 throw new Exception("Invalid action");
 
-            return cmd.ToCharArray()[0];
+            return cmdSplit;
         }
 
         private void QueryEnterOrder()
@@ -215,11 +233,11 @@ namespace ConsoleSample
                 SendMessage(m);
         }
 
-        private void QueryMarketDataRequest()
+        private void QueryMarketDataRequest(IEnumerable<string> parameters)
         {
             Console.WriteLine("\nMarketDataRequest");
 
-            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44();
+            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(parameters.First());
 
             if (m != null && QueryConfirm("Send market data request"))
                 SendMessage(m);
@@ -289,17 +307,17 @@ namespace ConsoleSample
             return ocrr;
         }
 
-        private QuickFix.FIX44.MarketDataRequest QueryMarketDataRequest44()
+        private QuickFix.FIX44.MarketDataRequest QueryMarketDataRequest44(string symbolId)
         {
             MDReqID mdReqID = new MDReqID("MARKETDATAID");
-            SubscriptionRequestType subType = new SubscriptionRequestType(SubscriptionRequestType.SNAPSHOT);
+            SubscriptionRequestType subType = new SubscriptionRequestType('1');
             MarketDepth marketDepth = new MarketDepth(0);
 
             QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup marketDataEntryGroup = new QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup();
-            marketDataEntryGroup.Set(new MDEntryType(MDEntryType.BID));
+            marketDataEntryGroup.Set(new MDEntryType('2'));
 
             QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup();
-            symbolGroup.Set(new Symbol("LNUX"));
+            symbolGroup.Set(new Symbol(symbolId));
 
             QuickFix.FIX44.MarketDataRequest message = new QuickFix.FIX44.MarketDataRequest(mdReqID, subType, marketDepth);
             message.AddGroup(marketDataEntryGroup);
