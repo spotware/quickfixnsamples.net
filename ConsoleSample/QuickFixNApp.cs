@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,17 +60,6 @@ namespace ConsoleSample
 
         public void FromApp(Message message, SessionID sessionID)
         {
-            try
-            {
-                //Crack(message, sessionID);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("==Cracker exception==");
-                Console.WriteLine(ex.ToString());
-                Console.WriteLine(ex.StackTrace);
-            }
-
             Console.WriteLine("--------------------------------------------");
         }
 
@@ -90,7 +80,6 @@ namespace ConsoleSample
             { }
 
             Console.WriteLine();
-            Console.WriteLine("OUT: " + message.ToString());
         }
 
         #endregion IApplication interface overrides
@@ -116,16 +105,21 @@ namespace ConsoleSample
                 try
                 {
                     var cmd = QueryAction();
+
+                    if (cmd is null) return;
+
                     var action = cmd[0].ToCharArray()[0];
 
+                    var parameters = cmd.Skip(1).ToArray();
+
                     if (action == '1')
-                        QueryEnterOrder();
+                        QueryEnterOrder(parameters);
                     else if (action == '2')
-                        QueryCancelOrder();
+                        QueryCancelOrder(parameters);
                     else if (action == '3')
-                        QueryReplaceOrder();
+                        QueryReplaceOrder(parameters);
                     else if (action == '4')
-                        QueryMarketDataRequest(cmd.Skip(1));
+                        QueryMarketDataRequest(parameters);
                     else if (action == 'g')
                     {
                         if (MyInitiator.IsStopped)
@@ -155,6 +149,7 @@ namespace ConsoleSample
                     Console.WriteLine("StackTrace: " + e.StackTrace);
                 }
             }
+
             Console.WriteLine("Program shutdown.");
         }
 
@@ -175,35 +170,34 @@ namespace ConsoleSample
         {
             // Commands 'g' and 'x' are intentionally hidden.
             Console.Write("\n"
-                + "1) Enter Order\n"
+                + "1) Enter New Order (clOrdID|symbolId|tradeSide (buy/sell)|orderType (market, limit, stop)|volume|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
                 + "2) Cancel Order\n"
                 + "3) Replace Order\n"
-                + "4) Market data (Space symold ID, ex: 4 1)\n"
+                + "4) Market data (symoldID|depth (y/n), ex: 4|1|n)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
-
-            HashSet<string> validActions = new HashSet<string>("1,2,3,4,q,Q,g,x".Split(','));
 
             string cmd = Console.ReadLine().Trim();
 
             if (string.IsNullOrWhiteSpace(cmd)) return default;
 
-            var cmdSplit = cmd.Split(' ');
+            var cmdSplit = cmd.Split('|');
 
             var action = cmdSplit[0];
 
-            if (action.Length != 1 || validActions.Contains(action) == false)
-                throw new Exception("Invalid action");
+            HashSet<string> validActions = new("1,2,3,4,q,Q,g,x".Split(','));
+
+            if (action.Length != 1 || validActions.Contains(action) == false) throw new InvalidOperationException("Invalid action");
 
             return cmdSplit;
         }
 
-        private void QueryEnterOrder()
+        private void QueryEnterOrder(string[] parameters)
         {
             Console.WriteLine("\nNewOrderSingle");
 
-            QuickFix.FIX44.NewOrderSingle m = QueryNewOrderSingle44();
+            QuickFix.FIX44.NewOrderSingle m = QueryNewOrderSingle44(parameters);
 
             if (m != null && QueryConfirm("Send order"))
             {
@@ -213,7 +207,7 @@ namespace ConsoleSample
             }
         }
 
-        private void QueryCancelOrder()
+        private void QueryCancelOrder(string[] parameters)
         {
             Console.WriteLine("\nOrderCancelRequest");
 
@@ -223,7 +217,7 @@ namespace ConsoleSample
                 SendMessage(m);
         }
 
-        private void QueryReplaceOrder()
+        private void QueryReplaceOrder(string[] parameters)
         {
             Console.WriteLine("\nCancelReplaceRequest");
 
@@ -233,11 +227,11 @@ namespace ConsoleSample
                 SendMessage(m);
         }
 
-        private void QueryMarketDataRequest(IEnumerable<string> parameters)
+        private void QueryMarketDataRequest(string[] parameters)
         {
             Console.WriteLine("\nMarketDataRequest");
 
-            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(parameters.First());
+            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(parameters[0], parameters[1]);
 
             if (m != null && QueryConfirm("Send market data request"))
                 SendMessage(m);
@@ -253,24 +247,49 @@ namespace ConsoleSample
 
         #region Message creation functions
 
-        private QuickFix.FIX44.NewOrderSingle QueryNewOrderSingle44()
+        private QuickFix.FIX44.NewOrderSingle QueryNewOrderSingle44(string[] parameters)
         {
-            OrdType ordType = null;
+            var ordType = QueryOrdType(parameters[3]);
 
             QuickFix.FIX44.NewOrderSingle newOrderSingle = new QuickFix.FIX44.NewOrderSingle(
-                QueryClOrdID(),
-                QuerySymbol(),
-                QuerySide(),
+                new ClOrdID(parameters[0]),
+                new Symbol(parameters[1]),
+                new Side(parameters[2].ToLowerInvariant().Equals("buy") ? '1' : '2'),
                 new TransactTime(DateTime.Now),
-                ordType = QueryOrdType());
+                ordType);
 
-            newOrderSingle.Set(new HandlInst('1'));
-            newOrderSingle.Set(QueryOrderQty());
-            newOrderSingle.Set(QueryTimeInForce());
-            if (ordType.getValue() == OrdType.LIMIT || ordType.getValue() == OrdType.STOP_LIMIT)
-                newOrderSingle.Set(QueryPrice());
-            if (ordType.getValue() == OrdType.STOP || ordType.getValue() == OrdType.STOP_LIMIT)
-                newOrderSingle.Set(QueryStopPx());
+            newOrderSingle.Set(new OrderQty(Convert.ToDecimal(parameters[4])));
+
+            if (ordType.getValue() != OrdType.MARKET)
+            {
+                newOrderSingle.Set(new TimeInForce('1'));
+
+                if (parameters.Length >= 6)
+                {
+                    if (ordType.getValue() == OrdType.LIMIT)
+                    {
+                        newOrderSingle.Set(new Price(Convert.ToDecimal(parameters[5])));
+                    }
+                    else
+                    {
+                        newOrderSingle.Set(new StopPx(Convert.ToDecimal(parameters[5])));
+                    }
+                }
+
+                if (parameters.Length >= 7 && DateTime.TryParse(parameters[6], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiryTime))
+                {
+                    newOrderSingle.Set(new ExpireTime(expiryTime));
+                }
+            }
+            else
+            {
+                newOrderSingle.Set(new TimeInForce('3'));
+            }
+
+            if (parameters.Length >= 8)
+            {
+                newOrderSingle.Set(new Designation(parameters[7]));
+            }
 
             return newOrderSingle;
         }
@@ -296,7 +315,7 @@ namespace ConsoleSample
                 QuerySymbol(),
                 QuerySide(),
                 new TransactTime(DateTime.Now),
-                QueryOrdType());
+                QueryOrdType(null));
 
             ocrr.Set(new HandlInst('1'));
             if (QueryConfirm("New price"))
@@ -307,14 +326,14 @@ namespace ConsoleSample
             return ocrr;
         }
 
-        private QuickFix.FIX44.MarketDataRequest QueryMarketDataRequest44(string symbolId)
+        private QuickFix.FIX44.MarketDataRequest QueryMarketDataRequest44(string symbolId, string depth)
         {
             MDReqID mdReqID = new MDReqID("MARKETDATAID");
             SubscriptionRequestType subType = new SubscriptionRequestType('1');
-            MarketDepth marketDepth = new MarketDepth(0);
+            MarketDepth marketDepth = new MarketDepth(depth.ToLowerInvariant().Equals("y") ? 1 : 0);
 
             QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup marketDataEntryGroup = new QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup();
-            marketDataEntryGroup.Set(new MDEntryType('2'));
+            marketDataEntryGroup.Set(new MDEntryType('1'));
 
             QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup();
             symbolGroup.Set(new Symbol(symbolId));
@@ -379,26 +398,17 @@ namespace ConsoleSample
             return new Side(c);
         }
 
-        private OrdType QueryOrdType()
+        private OrdType QueryOrdType(string orderType)
         {
-            Console.WriteLine();
-            Console.WriteLine("1) Market");
-            Console.WriteLine("2) Limit");
-            Console.WriteLine("3) Stop");
-            Console.WriteLine("4) Stop Limit");
-            Console.Write("OrdType? ");
-            string s = Console.ReadLine().Trim();
-
-            char c = ' ';
-            switch (s)
+            var result = orderType.ToLowerInvariant() switch
             {
-                case "1": c = OrdType.MARKET; break;
-                case "2": c = OrdType.LIMIT; break;
-                case "3": c = OrdType.STOP; break;
-                case "4": c = OrdType.STOP_LIMIT; break;
-                default: throw new Exception("unsupported input");
-            }
-            return new OrdType(c);
+                "market" => OrdType.MARKET,
+                "limit" => OrdType.LIMIT,
+                "stop" => OrdType.STOP,
+                _ => throw new Exception("unsupported input"),
+            };
+
+            return new OrdType(result);
         }
 
         private OrderQty QueryOrderQty()
