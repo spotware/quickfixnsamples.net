@@ -29,14 +29,16 @@ namespace ConsoleSample
 
                 QuickFixNApp application = new(username, password, sessionId);
                 QuickFix.IMessageStoreFactory storeFactory = new QuickFix.FileStoreFactory(settings);
-                QuickFix.ILogFactory logFactory = new QuickFix.ScreenLogFactory(settings);
-                QuickFix.Transport.SocketInitiator initiator = new(application, storeFactory, settings, logFactory);
+
+                QuickFix.Transport.SocketInitiator initiator = new(application, storeFactory, settings);
 
                 // this is a developer-test kludge.  do not emulate.
                 application.MyInitiator = initiator;
 
                 initiator.Start();
+
                 application.Run();
+
                 initiator.Stop();
             }
             catch (Exception e)

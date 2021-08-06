@@ -36,16 +36,21 @@ namespace ConsoleSample
 
         public void OnLogon(SessionID sessionID)
         {
+            Console.WriteLine();
             Console.WriteLine("Logon - " + sessionID.ToString());
         }
 
         public void OnLogout(SessionID sessionID)
         {
+            Console.WriteLine();
             Console.WriteLine("Logout - " + sessionID.ToString());
         }
 
         public void FromAdmin(Message message, SessionID sessionID)
         {
+            Console.WriteLine();
+            Console.WriteLine($"Incoming: {message}");
+            Console.WriteLine("--------------------------------------------");
         }
 
         public void ToAdmin(Message message, SessionID sessionID)
@@ -60,6 +65,8 @@ namespace ConsoleSample
 
         public void FromApp(Message message, SessionID sessionID)
         {
+            Console.WriteLine();
+            Console.WriteLine($"Incoming: {message}");
             Console.WriteLine("--------------------------------------------");
         }
 
