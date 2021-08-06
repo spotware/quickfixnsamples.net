@@ -110,16 +110,16 @@ namespace ConsoleSample
 
                     var action = cmd[0].ToCharArray()[0];
 
-                    var parameters = cmd.Skip(1).ToArray();
+                    var fields = cmd.Skip(1).ToArray();
 
                     if (action == '1')
-                        QueryEnterOrder(parameters);
+                        QueryEnterOrder(fields);
                     else if (action == '2')
-                        QueryCancelOrder(parameters);
+                        QueryCancelOrder(fields);
                     else if (action == '3')
-                        QueryReplaceOrder(parameters);
+                        QueryReplaceOrder(fields);
                     else if (action == '4')
-                        QueryMarketDataRequest(parameters);
+                        QueryMarketDataRequest(fields);
                     else if (action == 'g')
                     {
                         if (MyInitiator.IsStopped)
@@ -169,11 +169,13 @@ namespace ConsoleSample
         private string[] QueryAction()
         {
             // Commands 'g' and 'x' are intentionally hidden.
+            Console.WriteLine("Fields with * are required and you must provide a value for them");
+
             Console.Write("\n"
-                + "1) Enter New Order (clOrdID|symbolId|tradeSide (buy/sell)|orderType (market, limit, stop)|volume|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
-                + "2) Cancel Order\n"
+                + "1) Enter New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*volume|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
+                + "2) Cancel Order (*origClOrdID|*clOrdID|orderId, ex: 2|OrderClientID|CancelOrder)\n"
                 + "3) Replace Order\n"
-                + "4) Market data (symoldID|depth (y/n), ex: 4|1|n)\n"
+                + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
@@ -193,11 +195,11 @@ namespace ConsoleSample
             return cmdSplit;
         }
 
-        private void QueryEnterOrder(string[] parameters)
+        private void QueryEnterOrder(string[] fields)
         {
             Console.WriteLine("\nNewOrderSingle");
 
-            QuickFix.FIX44.NewOrderSingle m = QueryNewOrderSingle44(parameters);
+            QuickFix.FIX44.NewOrderSingle m = QueryNewOrderSingle44(fields);
 
             if (m != null && QueryConfirm("Send order"))
             {
@@ -207,17 +209,17 @@ namespace ConsoleSample
             }
         }
 
-        private void QueryCancelOrder(string[] parameters)
+        private void QueryCancelOrder(string[] fields)
         {
             Console.WriteLine("\nOrderCancelRequest");
 
-            QuickFix.FIX44.OrderCancelRequest m = QueryOrderCancelRequest44();
+            QuickFix.FIX44.OrderCancelRequest m = QueryOrderCancelRequest44(fields);
 
             if (m != null && QueryConfirm("Cancel order"))
                 SendMessage(m);
         }
 
-        private void QueryReplaceOrder(string[] parameters)
+        private void QueryReplaceOrder(string[] fields)
         {
             Console.WriteLine("\nCancelReplaceRequest");
 
@@ -227,11 +229,11 @@ namespace ConsoleSample
                 SendMessage(m);
         }
 
-        private void QueryMarketDataRequest(string[] parameters)
+        private void QueryMarketDataRequest(string[] fields)
         {
             Console.WriteLine("\nMarketDataRequest");
 
-            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(parameters[0], parameters[1]);
+            QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(fields[0], fields[1]);
 
             if (m != null && QueryConfirm("Send market data request"))
                 SendMessage(m);
@@ -247,36 +249,36 @@ namespace ConsoleSample
 
         #region Message creation functions
 
-        private QuickFix.FIX44.NewOrderSingle QueryNewOrderSingle44(string[] parameters)
+        private QuickFix.FIX44.NewOrderSingle QueryNewOrderSingle44(string[] fields)
         {
-            var ordType = QueryOrdType(parameters[3]);
+            var ordType = QueryOrdType(fields[3]);
 
             QuickFix.FIX44.NewOrderSingle newOrderSingle = new QuickFix.FIX44.NewOrderSingle(
-                new ClOrdID(parameters[0]),
-                new Symbol(parameters[1]),
-                new Side(parameters[2].ToLowerInvariant().Equals("buy") ? '1' : '2'),
+                new ClOrdID(fields[0]),
+                new Symbol(fields[1]),
+                new Side(fields[2].ToLowerInvariant().Equals("buy") ? '1' : '2'),
                 new TransactTime(DateTime.Now),
                 ordType);
 
-            newOrderSingle.Set(new OrderQty(Convert.ToDecimal(parameters[4])));
+            newOrderSingle.Set(new OrderQty(Convert.ToDecimal(fields[4])));
 
             if (ordType.getValue() != OrdType.MARKET)
             {
                 newOrderSingle.Set(new TimeInForce('1'));
 
-                if (parameters.Length >= 6)
+                if (fields.Length >= 7)
                 {
                     if (ordType.getValue() == OrdType.LIMIT)
                     {
-                        newOrderSingle.Set(new Price(Convert.ToDecimal(parameters[5])));
+                        newOrderSingle.Set(new Price(Convert.ToDecimal(fields[6])));
                     }
                     else
                     {
-                        newOrderSingle.Set(new StopPx(Convert.ToDecimal(parameters[5])));
+                        newOrderSingle.Set(new StopPx(Convert.ToDecimal(fields[6])));
                     }
                 }
 
-                if (parameters.Length >= 7 && DateTime.TryParse(parameters[6], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiryTime))
+                if (fields.Length >= 8 && DateTime.TryParse(fields[7], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiryTime))
                 {
                     newOrderSingle.Set(new ExpireTime(expiryTime));
                 }
@@ -284,26 +286,34 @@ namespace ConsoleSample
             else
             {
                 newOrderSingle.Set(new TimeInForce('3'));
+
+                if (fields.Length >= 6)
+                {
+                    newOrderSingle.SetField(new StringField(721, fields[5]));
+                }
             }
 
-            if (parameters.Length >= 8)
+            if (fields.Length >= 9)
             {
-                newOrderSingle.Set(new Designation(parameters[7]));
+                newOrderSingle.Set(new Designation(fields[8]));
             }
 
             return newOrderSingle;
         }
 
-        private QuickFix.FIX44.OrderCancelRequest QueryOrderCancelRequest44()
+        private QuickFix.FIX44.OrderCancelRequest QueryOrderCancelRequest44(string[] fields)
         {
-            QuickFix.FIX44.OrderCancelRequest orderCancelRequest = new QuickFix.FIX44.OrderCancelRequest(
-                QueryOrigClOrdID(),
-                QueryClOrdID(),
-                QuerySymbol(),
-                QuerySide(),
-                new TransactTime(DateTime.Now));
+            QuickFix.FIX44.OrderCancelRequest orderCancelRequest = new()
+            {
+                OrigClOrdID = new OrigClOrdID(fields[0].Trim()),
+                ClOrdID = new ClOrdID(fields[1].Trim())
+            };
 
-            orderCancelRequest.Set(QueryOrderQty());
+            if (fields.Length >= 3)
+            {
+                orderCancelRequest.OrderID = new OrderID(fields[2].Trim());
+            }
+
             return orderCancelRequest;
         }
 
@@ -418,42 +428,11 @@ namespace ConsoleSample
             return new OrderQty(Convert.ToDecimal(Console.ReadLine().Trim()));
         }
 
-        private TimeInForce QueryTimeInForce()
-        {
-            Console.WriteLine();
-            Console.WriteLine("1) Day");
-            Console.WriteLine("2) IOC");
-            Console.WriteLine("3) OPG");
-            Console.WriteLine("4) GTC");
-            Console.WriteLine("5) GTX");
-            Console.Write("TimeInForce? ");
-            string s = Console.ReadLine().Trim();
-
-            char c = ' ';
-            switch (s)
-            {
-                case "1": c = TimeInForce.DAY; break;
-                case "2": c = TimeInForce.IMMEDIATE_OR_CANCEL; break;
-                case "3": c = TimeInForce.AT_THE_OPENING; break;
-                case "4": c = TimeInForce.GOOD_TILL_CANCEL; break;
-                case "5": c = TimeInForce.GOOD_TILL_CROSSING; break;
-                default: throw new Exception("unsupported input");
-            }
-            return new TimeInForce(c);
-        }
-
         private Price QueryPrice()
         {
             Console.WriteLine();
             Console.Write("Price? ");
             return new Price(Convert.ToDecimal(Console.ReadLine().Trim()));
-        }
-
-        private StopPx QueryStopPx()
-        {
-            Console.WriteLine();
-            Console.Write("StopPx? ");
-            return new StopPx(Convert.ToDecimal(Console.ReadLine().Trim()));
         }
 
         #endregion field query private methods
