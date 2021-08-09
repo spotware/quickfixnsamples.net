@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using QuickFix;
 using QuickFix.Fields;
 
@@ -36,8 +34,6 @@ namespace ConsoleSample
 
         public void OnLogon(SessionID sessionID)
         {
-            Console.WriteLine();
-            Console.WriteLine("Logon - " + sessionID.ToString());
         }
 
         public void OnLogout(SessionID sessionID)
@@ -48,6 +44,10 @@ namespace ConsoleSample
 
         public void FromAdmin(Message message, SessionID sessionID)
         {
+            var messageType = message.Header.GetString(35);
+
+            if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
+
             Console.WriteLine();
             Console.WriteLine($"Incoming: {message}");
             Console.WriteLine("--------------------------------------------");
@@ -55,6 +55,10 @@ namespace ConsoleSample
 
         public void ToAdmin(Message message, SessionID sessionID)
         {
+            var messageType = message.Header.GetString(35);
+
+            if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase)) return;
+
             message.SetField(new StringField(49, _sessionId.SenderCompID));
             message.SetField(new StringField(56, _sessionId.TargetCompID));
             message.SetField(new StringField(50, _sessionId.SenderSubID));
@@ -175,13 +179,15 @@ namespace ConsoleSample
 
         private string[] QueryAction()
         {
-            // Commands 'g' and 'x' are intentionally hidden.
             Console.WriteLine("Fields with * are required and you must provide a value for them");
+            Console.WriteLine("You must pass the field values in exact order provided for each command");
+            Console.WriteLine("If you are passing value for optional fields you can't skip the other optional fields before it, so you must provide a value for those optional fields too");
+            Console.WriteLine("To skip an optional field you can set its value to 0");
 
             Console.Write("\n"
-                + "1) Enter New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*volume|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
+                + "1) Enter New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*orderQty|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
                 + "2) Cancel Order (*origClOrdID|*clOrdID|orderId, ex: 2|OrderClientID|CancelOrder)\n"
-                + "3) Replace Order\n"
+                + "3) Replace Order (*origClOrdID|*clOrdID|*orderQty|orderId|price|stopPx|expireTime, ex: 3|OrderClientID|CancelOrder|30000|0|1.27)\n"
                 + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
                 + "Q) Quit\n"
                 + "Action: "
@@ -230,7 +236,7 @@ namespace ConsoleSample
         {
             Console.WriteLine("\nCancelReplaceRequest");
 
-            QuickFix.FIX44.OrderCancelReplaceRequest m = QueryCancelReplaceRequest44();
+            QuickFix.FIX44.OrderCancelReplaceRequest m = QueryCancelReplaceRequest44(fields);
 
             if (m != null && QueryConfirm("Send replace"))
                 SendMessage(m);
@@ -258,7 +264,13 @@ namespace ConsoleSample
 
         private QuickFix.FIX44.NewOrderSingle QueryNewOrderSingle44(string[] fields)
         {
-            var ordType = QueryOrdType(fields[3]);
+            var ordType = new OrdType(fields[3].ToLowerInvariant() switch
+            {
+                "market" => OrdType.MARKET,
+                "limit" => OrdType.LIMIT,
+                "stop" => OrdType.STOP,
+                _ => throw new Exception("unsupported input"),
+            });
 
             QuickFix.FIX44.NewOrderSingle newOrderSingle = new QuickFix.FIX44.NewOrderSingle(
                 new ClOrdID(fields[0]),
@@ -300,7 +312,7 @@ namespace ConsoleSample
                 }
             }
 
-            if (fields.Length >= 9)
+            if (fields.Length >= 9 && string.IsNullOrWhiteSpace(fields[8]) is false)
             {
                 newOrderSingle.Set(new Designation(fields[8]));
             }
@@ -316,7 +328,7 @@ namespace ConsoleSample
                 ClOrdID = new ClOrdID(fields[1].Trim())
             };
 
-            if (fields.Length >= 3)
+            if (fields.Length >= 3 && fields[2].Trim().Equals("0", StringComparison.OrdinalIgnoreCase) is false)
             {
                 orderCancelRequest.OrderID = new OrderID(fields[2].Trim());
             }
@@ -324,23 +336,36 @@ namespace ConsoleSample
             return orderCancelRequest;
         }
 
-        private QuickFix.FIX44.OrderCancelReplaceRequest QueryCancelReplaceRequest44()
+        private QuickFix.FIX44.OrderCancelReplaceRequest QueryCancelReplaceRequest44(string[] fields)
         {
-            QuickFix.FIX44.OrderCancelReplaceRequest ocrr = new QuickFix.FIX44.OrderCancelReplaceRequest(
-                QueryOrigClOrdID(),
-                QueryClOrdID(),
-                QuerySymbol(),
-                QuerySide(),
-                new TransactTime(DateTime.Now),
-                QueryOrdType(null));
+            QuickFix.FIX44.OrderCancelReplaceRequest orderCancelReplaceRequest = new()
+            {
+                OrigClOrdID = new OrigClOrdID(fields[0].Trim()),
+                ClOrdID = new ClOrdID(fields[1].Trim()),
+                OrderQty = new OrderQty(Convert.ToDecimal(fields[2].Trim()))
+            };
 
-            ocrr.Set(new HandlInst('1'));
-            if (QueryConfirm("New price"))
-                ocrr.Set(QueryPrice());
-            if (QueryConfirm("New quantity"))
-                ocrr.Set(QueryOrderQty());
+            if (fields.Length >= 4 && fields[3].Trim().Equals("0", StringComparison.OrdinalIgnoreCase) is false)
+            {
+                orderCancelReplaceRequest.OrderID = new OrderID(fields[3].Trim());
+            }
 
-            return ocrr;
+            if (fields.Length >= 5 && decimal.TryParse(fields[4].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var price) && price != default)
+            {
+                orderCancelReplaceRequest.Price = new Price(price);
+            }
+
+            if (fields.Length >= 6 && decimal.TryParse(fields[5].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var stopPx) && stopPx != default)
+            {
+                orderCancelReplaceRequest.StopPx = new StopPx(stopPx);
+            }
+
+            if (fields.Length >= 7 && DateTime.TryParse(fields[6], CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiryTime))
+            {
+                orderCancelReplaceRequest.Set(new ExpireTime(expiryTime));
+            }
+
+            return orderCancelReplaceRequest;
         }
 
         private QuickFix.FIX44.MarketDataRequest QueryMarketDataRequest44(string symbolId, string depth)
@@ -363,85 +388,5 @@ namespace ConsoleSample
         }
 
         #endregion Message creation functions
-
-        #region field query private methods
-
-        private ClOrdID QueryClOrdID()
-        {
-            Console.WriteLine();
-            Console.Write("ClOrdID? ");
-            return new ClOrdID(Console.ReadLine().Trim());
-        }
-
-        private OrigClOrdID QueryOrigClOrdID()
-        {
-            Console.WriteLine();
-            Console.Write("OrigClOrdID? ");
-            return new OrigClOrdID(Console.ReadLine().Trim());
-        }
-
-        private Symbol QuerySymbol()
-        {
-            Console.WriteLine();
-            Console.Write("Symbol? ");
-            return new Symbol(Console.ReadLine().Trim());
-        }
-
-        private Side QuerySide()
-        {
-            Console.WriteLine();
-            Console.WriteLine("1) Buy");
-            Console.WriteLine("2) Sell");
-            Console.WriteLine("3) Sell Short");
-            Console.WriteLine("4) Sell Short Exempt");
-            Console.WriteLine("5) Cross");
-            Console.WriteLine("6) Cross Short");
-            Console.WriteLine("7) Cross Short Exempt");
-            Console.Write("Side? ");
-            string s = Console.ReadLine().Trim();
-
-            char c = ' ';
-            switch (s)
-            {
-                case "1": c = Side.BUY; break;
-                case "2": c = Side.SELL; break;
-                case "3": c = Side.SELL_SHORT; break;
-                case "4": c = Side.SELL_SHORT_EXEMPT; break;
-                case "5": c = Side.CROSS; break;
-                case "6": c = Side.CROSS_SHORT; break;
-                case "7": c = 'A'; break;
-                default: throw new Exception("unsupported input");
-            }
-            return new Side(c);
-        }
-
-        private OrdType QueryOrdType(string orderType)
-        {
-            var result = orderType.ToLowerInvariant() switch
-            {
-                "market" => OrdType.MARKET,
-                "limit" => OrdType.LIMIT,
-                "stop" => OrdType.STOP,
-                _ => throw new Exception("unsupported input"),
-            };
-
-            return new OrdType(result);
-        }
-
-        private OrderQty QueryOrderQty()
-        {
-            Console.WriteLine();
-            Console.Write("OrderQty? ");
-            return new OrderQty(Convert.ToDecimal(Console.ReadLine().Trim()));
-        }
-
-        private Price QueryPrice()
-        {
-            Console.WriteLine();
-            Console.Write("Price? ");
-            return new Price(Convert.ToDecimal(Console.ReadLine().Trim()));
-        }
-
-        #endregion field query private methods
     }
 }
