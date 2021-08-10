@@ -131,6 +131,10 @@ namespace ConsoleSample
                         QueryReplaceOrder(fields);
                     else if (action == '4')
                         QueryMarketDataRequest(fields);
+                    else if (action == '5')
+                        QueryOrderMassStatusRequest(fields);
+                    else if (action == '6')
+                        QueryRequestForPositions(fields);
                     else if (action == 'g')
                     {
                         if (MyInitiator.IsStopped)
@@ -189,6 +193,8 @@ namespace ConsoleSample
                 + "2) Cancel Order (*origClOrdID|*clOrdID|orderId, ex: 2|OrderClientID|CancelOrder)\n"
                 + "3) Replace Order (*origClOrdID|*clOrdID|*orderQty|orderId|price|stopPx|expireTime, ex: 3|OrderClientID|CancelOrder|30000|0|1.27)\n"
                 + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
+                + "5) Order Mass Status (*massStatusReqID|*massStatusReqType|issueDate, ex: 5|MassStatus|7)\n"
+                + "6) Request For Positions (*posReqID|posMaintRptID, ex: 6|Positions)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
@@ -201,7 +207,7 @@ namespace ConsoleSample
 
             var action = cmdSplit[0];
 
-            HashSet<string> validActions = new("1,2,3,4,q,Q,g,x".Split(','));
+            HashSet<string> validActions = new("1,2,3,4,5,6,7,q,Q,g,x".Split(','));
 
             if (action.Length != 1 || validActions.Contains(action) == false) throw new InvalidOperationException("Invalid action");
 
@@ -249,6 +255,26 @@ namespace ConsoleSample
             QuickFix.FIX44.MarketDataRequest m = QueryMarketDataRequest44(fields[0], fields[1]);
 
             if (m != null && QueryConfirm("Send market data request"))
+                SendMessage(m);
+        }
+
+        private void QueryOrderMassStatusRequest(string[] fields)
+        {
+            Console.WriteLine("\nOrderMassStatusRequest");
+
+            QuickFix.FIX44.OrderMassStatusRequest m = QueryOrderMassStatusRequest44(fields);
+
+            if (m != null && QueryConfirm("Send Order Mass Status request"))
+                SendMessage(m);
+        }
+
+        private void QueryRequestForPositions(string[] fields)
+        {
+            Console.WriteLine("\nRequestForPositions");
+
+            QuickFix.FIX44.RequestForPositions m = QueryRequestForPositions44(fields);
+
+            if (m != null && QueryConfirm("Send Request For Positions"))
                 SendMessage(m);
         }
 
@@ -383,6 +409,32 @@ namespace ConsoleSample
             QuickFix.FIX44.MarketDataRequest message = new QuickFix.FIX44.MarketDataRequest(mdReqID, subType, marketDepth);
             message.AddGroup(marketDataEntryGroup);
             message.AddGroup(symbolGroup);
+
+            return message;
+        }
+
+        private QuickFix.FIX44.OrderMassStatusRequest QueryOrderMassStatusRequest44(string[] fields)
+        {
+            QuickFix.FIX44.OrderMassStatusRequest message = new QuickFix.FIX44.OrderMassStatusRequest(new MassStatusReqID(fields[0]), new MassStatusReqType(Convert.ToInt32(fields[1])));
+
+            if (fields.Length >= 3)
+            {
+                message.IssueDate = new IssueDate(fields[2]);
+            }
+
+            return message;
+        }
+
+        private QuickFix.FIX44.RequestForPositions QueryRequestForPositions44(string[] fields)
+        {
+            QuickFix.FIX44.RequestForPositions message = new QuickFix.FIX44.RequestForPositions();
+
+            message.PosReqID = new PosReqID(fields[0]);
+
+            if (fields.Length >= 2)
+            {
+                message.SetField(new StringField(721, fields[1]));
+            }
 
             return message;
         }
