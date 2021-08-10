@@ -12,6 +12,7 @@ StartTime=00:00:00
 EndTime=00:00:00
 UseDataDictionary=Y
 DataDictionary=./FIX44-CSERVER.xml
+# Plain text, not SSL
 SocketConnectHost=cTrader_FIX_API_Host_Name
 SocketConnectPort=cTrader_FIX_API_Port
 LogoutTimeout=100
@@ -31,5 +32,7 @@ HeartBtInt=30
 ```
 
 cTrader FIX API has two credentials, one for quote messages and another for trading (Trade) messages.
+
+You can only use plain text, not SSL, so please use the plain text host/port of cTrader FIX API.
 
 You have to change the SenderSubID, TargetSubID, SocketConnectHost, and SocketConnectPort to FIX Quotes credentials if you want to use quote messages.
