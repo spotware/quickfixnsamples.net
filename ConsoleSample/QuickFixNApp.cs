@@ -135,6 +135,8 @@ namespace ConsoleSample
                         QueryOrderMassStatusRequest(fields);
                     else if (action == '6')
                         QueryRequestForPositions(fields);
+                    else if (action == '7')
+                        SecurityListRequest(fields);
                     else if (action == 'g')
                     {
                         if (MyInitiator.IsStopped)
@@ -195,6 +197,7 @@ namespace ConsoleSample
                 + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
                 + "5) Order Mass Status (*massStatusReqID|*massStatusReqType|issueDate, ex: 5|MassStatus|7)\n"
                 + "6) Request For Positions (*posReqID|posMaintRptID, ex: 6|Positions)\n"
+                + "7) Security List Request (*securityReqID|*securityListRequestType|symbol, ex: 7|symbols|0)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
@@ -275,6 +278,16 @@ namespace ConsoleSample
             QuickFix.FIX44.RequestForPositions m = QueryRequestForPositions44(fields);
 
             if (m != null && QueryConfirm("Send Request For Positions"))
+                SendMessage(m);
+        }
+
+        private void SecurityListRequest(string[] fields)
+        {
+            Console.WriteLine("\nSecurityListRequest");
+
+            QuickFix.FIX44.SecurityListRequest m = SecurityListRequest44(fields);
+
+            if (m != null && QueryConfirm("Send security list request"))
                 SendMessage(m);
         }
 
@@ -434,6 +447,18 @@ namespace ConsoleSample
             if (fields.Length >= 2)
             {
                 message.SetField(new StringField(721, fields[1]));
+            }
+
+            return message;
+        }
+
+        private QuickFix.FIX44.SecurityListRequest SecurityListRequest44(string[] fields)
+        {
+            QuickFix.FIX44.SecurityListRequest message = new QuickFix.FIX44.SecurityListRequest(new SecurityReqID(fields[0]), new SecurityListRequestType(Convert.ToInt32(fields[1])));
+
+            if (fields.Length >= 3)
+            {
+                message.Symbol = new Symbol(fields[2]);
             }
 
             return message;
