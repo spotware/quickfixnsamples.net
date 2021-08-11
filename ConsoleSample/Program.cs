@@ -18,7 +18,7 @@ namespace ConsoleSample
 
             try
             {
-                QuickFix.SessionSettings settings = new QuickFix.SessionSettings(_configFile);
+                QuickFix.SessionSettings settings = new(_configFile);
 
                 var defaultSettings = settings.Get();
 
