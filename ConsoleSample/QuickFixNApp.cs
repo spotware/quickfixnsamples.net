@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using QuickFix;
 using QuickFix.Fields;
 
@@ -34,6 +37,8 @@ namespace ConsoleSample
 
         public void OnLogon(SessionID sessionID)
         {
+            Console.WriteLine();
+            Console.WriteLine("Logon - " + sessionID.ToString());
         }
 
         public void OnLogout(SessionID sessionID)
@@ -48,9 +53,7 @@ namespace ConsoleSample
 
             if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
 
-            Console.WriteLine();
-            Console.WriteLine($"Incoming: {message}");
-            Console.WriteLine("--------------------------------------------");
+            Crack(message, sessionID);
         }
 
         public void ToAdmin(Message message, SessionID sessionID)
@@ -69,9 +72,7 @@ namespace ConsoleSample
 
         public void FromApp(Message message, SessionID sessionID)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Incoming: {message}");
-            Console.WriteLine("--------------------------------------------");
+            Crack(message, sessionID);
         }
 
         public void ToApp(Message message, SessionID sessionID)
@@ -94,6 +95,60 @@ namespace ConsoleSample
         }
 
         #endregion IApplication interface overrides
+
+        #region Message cracker
+
+        public void OnMessage(QuickFix.FIX44.NewOrderSingle message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.SecurityDefinition message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.SecurityList message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.MarketDataIncrementalRefresh message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.MarketDataSnapshotFullRefresh message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.MarketDataRequestReject message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.PositionReport message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.OrderCancelReject message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.ExecutionReport message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        public void OnMessage(QuickFix.FIX44.BusinessMessageReject message, SessionID sessionID)
+        {
+            ShowMessageData(message);
+        }
+
+        #endregion Message cracker
 
         public void Run()
         {
@@ -414,6 +469,58 @@ namespace ConsoleSample
             }
 
             SendMessage(message);
+        }
+
+        private void ShowMessageData<TMessage>(TMessage message) where TMessage : Message
+        {
+            var properties = message.GetType().GetProperties();
+
+            var ignoredPropertyNames = new string[] { "Header", "Trailer", "RepeatedTags", "FieldOrder" };
+
+            var stringBuilder = new StringBuilder();
+
+            stringBuilder.AppendLine("Response: ");
+
+            stringBuilder.AppendLine("{");
+
+            foreach (var property in properties)
+            {
+                if (property.CanRead is false || ignoredPropertyNames.Contains(property.Name, StringComparer.OrdinalIgnoreCase)) continue;
+
+                try
+                {
+                    stringBuilder.AppendLine($"    {property.Name}: \"{property.GetValue(message)}\",");
+                }
+                catch (ApplicationException)
+                {
+                }
+            }
+
+            stringBuilder.AppendLine($"    Raw: ");
+            stringBuilder.AppendLine($"    [");
+
+            var fields = message.ToString().Split('').Where(field => string.IsNullOrWhiteSpace(field) is false).ToArray();
+
+            var lastField = fields.Last();
+
+            foreach (var field in fields)
+            {
+                var tagValue = field.Split('=');
+
+                if (tagValue.Length < 2) continue;
+
+                var comma = field.Equals(lastField, StringComparison.OrdinalIgnoreCase) ? "" : ",";
+
+                stringBuilder.AppendLine($"        {{{tagValue[0]}: \"{tagValue[1]}\"}}{comma}");
+            }
+
+            stringBuilder.AppendLine($"    ]");
+
+            stringBuilder.AppendLine("}");
+
+            Console.WriteLine();
+            Console.WriteLine(stringBuilder);
+            Console.WriteLine();
         }
     }
 }
