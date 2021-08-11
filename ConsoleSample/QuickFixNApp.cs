@@ -496,8 +496,8 @@ namespace ConsoleSample
                 }
             }
 
-            stringBuilder.AppendLine($"    Raw: ");
-            stringBuilder.AppendLine($"    [");
+            stringBuilder.AppendLine("    All Fields: ");
+            stringBuilder.AppendLine("    [");
 
             var fields = message.ToString().Split('').Where(field => string.IsNullOrWhiteSpace(field) is false).ToArray();
 
@@ -514,7 +514,8 @@ namespace ConsoleSample
                 stringBuilder.AppendLine($"        {{{tagValue[0]}: \"{tagValue[1]}\"}}{comma}");
             }
 
-            stringBuilder.AppendLine($"    ]");
+            stringBuilder.AppendLine("    ],");
+            stringBuilder.AppendLine($"    Raw: \"{message.ToString().Replace('', '|')}\"");
 
             stringBuilder.AppendLine("}");
 
