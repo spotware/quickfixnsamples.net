@@ -93,8 +93,6 @@ namespace ConsoleSample
             }
             catch (FieldNotFoundException)
             { }
-
-            Console.WriteLine();
         }
 
         #endregion IApplication interface overrides
@@ -296,7 +294,7 @@ namespace ConsoleSample
             return cmdSplit;
         }
 
-        public void SendEnterOrder(string[] fields)
+        private void SendEnterOrder(string[] fields)
         {
             var ordType = new OrdType(fields[3].ToLowerInvariant() switch
             {
@@ -356,7 +354,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendCancelOrder(string[] fields)
+        private void SendCancelOrder(string[] fields)
         {
             QuickFix.FIX44.OrderCancelRequest message = new()
             {
@@ -372,7 +370,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendReplaceOrder(string[] fields)
+        private void SendReplaceOrder(string[] fields)
         {
             QuickFix.FIX44.OrderCancelReplaceRequest message = new()
             {
@@ -404,7 +402,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendMarketDataRequest(string[] fields)
+        private void SendMarketDataRequest(string[] fields)
         {
             MDReqID mdReqID = new("MARKETDATAID");
             SubscriptionRequestType subType = new('1');
@@ -423,7 +421,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendOrderMassStatusRequest(string[] fields)
+        private void SendOrderMassStatusRequest(string[] fields)
         {
             QuickFix.FIX44.OrderMassStatusRequest message = new(new MassStatusReqID(fields[0]), new MassStatusReqType(Convert.ToInt32(fields[1])));
 
@@ -435,7 +433,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendRequestForPositions(string[] fields)
+        private void SendRequestForPositions(string[] fields)
         {
             QuickFix.FIX44.RequestForPositions message = new();
 
@@ -449,7 +447,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendSecurityListRequest(string[] fields)
+        private void SendSecurityListRequest(string[] fields)
         {
             QuickFix.FIX44.SecurityListRequest message = new(new SecurityReqID(fields[0]), new SecurityListRequestType(Convert.ToInt32(fields[1])));
 
@@ -461,7 +459,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        public void SendOrderStatusRequest(string[] fields)
+        private void SendOrderStatusRequest(string[] fields)
         {
             QuickFix.FIX44.OrderStatusRequest message = new()
             {
