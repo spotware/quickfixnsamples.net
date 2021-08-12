@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using QuickFix;
 using QuickFix.Fields;
 
@@ -20,6 +20,9 @@ namespace ConsoleSample
         private readonly string _username;
         private readonly string _password;
         private readonly SessionID _sessionId;
+        private readonly BufferBlock<Message> _messagesBuffer = new BufferBlock<Message>();
+
+        public Task Completion => throw new NotImplementedException();
 
         public QuickFixNApp(string username, string password, SessionID sessionId)
         {
@@ -28,6 +31,12 @@ namespace ConsoleSample
             _sessionId = sessionId;
         }
 
+        public ISourceBlock<Message> MessagesBuffer => _messagesBuffer;
+
+        public event Func<Task> Logon;
+
+        public event Func<Task> Logout;
+
         #region IApplication interface overrides
 
         public void OnCreate(SessionID sessionID)
@@ -35,25 +44,19 @@ namespace ConsoleSample
             _session = Session.LookupSession(sessionID);
         }
 
-        public void OnLogon(SessionID sessionID)
+        public async void OnLogon(SessionID sessionID)
         {
-            Console.WriteLine();
-            Console.WriteLine("Logon - " + sessionID.ToString());
+            await Logon?.Invoke();
         }
 
-        public void OnLogout(SessionID sessionID)
+        public async void OnLogout(SessionID sessionID)
         {
-            Console.WriteLine();
-            Console.WriteLine("Logout - " + sessionID.ToString());
+            await Logout?.Invoke();
         }
 
-        public void FromAdmin(Message message, SessionID sessionID)
+        public async void FromAdmin(Message message, SessionID sessionID)
         {
-            var messageType = message.Header.GetString(35);
-
-            if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
-
-            Crack(message, sessionID);
+            await _messagesBuffer.SendAsync(message);
         }
 
         public void ToAdmin(Message message, SessionID sessionID)
@@ -98,54 +101,54 @@ namespace ConsoleSample
 
         #region Message cracker
 
-        public void OnMessage(QuickFix.FIX44.NewOrderSingle message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.NewOrderSingle message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.SecurityDefinition message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.SecurityDefinition message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.SecurityList message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.SecurityList message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.MarketDataIncrementalRefresh message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.MarketDataIncrementalRefresh message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.MarketDataSnapshotFullRefresh message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.MarketDataSnapshotFullRefresh message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.MarketDataRequestReject message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.MarketDataRequestReject message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.PositionReport message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.PositionReport message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.OrderCancelReject message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.OrderCancelReject message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.ExecutionReport message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.ExecutionReport message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
-        public void OnMessage(QuickFix.FIX44.BusinessMessageReject message, SessionID sessionID)
+        public async void OnMessage(QuickFix.FIX44.BusinessMessageReject message, SessionID sessionID)
         {
-            ShowMessageData(message);
+            await _messagesBuffer.SendAsync(message);
         }
 
         #endregion Message cracker
@@ -195,6 +198,8 @@ namespace ConsoleSample
             }
 
             Console.WriteLine("Program shutdown.");
+
+            _messagesBuffer.Complete();
         }
 
         private void ExecuteAction(char action, string[] fields)
@@ -291,7 +296,7 @@ namespace ConsoleSample
             return cmdSplit;
         }
 
-        private void SendEnterOrder(string[] fields)
+        public void SendEnterOrder(string[] fields)
         {
             var ordType = new OrdType(fields[3].ToLowerInvariant() switch
             {
@@ -351,7 +356,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendCancelOrder(string[] fields)
+        public void SendCancelOrder(string[] fields)
         {
             QuickFix.FIX44.OrderCancelRequest message = new()
             {
@@ -367,7 +372,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendReplaceOrder(string[] fields)
+        public void SendReplaceOrder(string[] fields)
         {
             QuickFix.FIX44.OrderCancelReplaceRequest message = new()
             {
@@ -399,7 +404,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendMarketDataRequest(string[] fields)
+        public void SendMarketDataRequest(string[] fields)
         {
             MDReqID mdReqID = new("MARKETDATAID");
             SubscriptionRequestType subType = new('1');
@@ -418,7 +423,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendOrderMassStatusRequest(string[] fields)
+        public void SendOrderMassStatusRequest(string[] fields)
         {
             QuickFix.FIX44.OrderMassStatusRequest message = new(new MassStatusReqID(fields[0]), new MassStatusReqType(Convert.ToInt32(fields[1])));
 
@@ -430,7 +435,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendRequestForPositions(string[] fields)
+        public void SendRequestForPositions(string[] fields)
         {
             QuickFix.FIX44.RequestForPositions message = new();
 
@@ -444,7 +449,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendSecurityListRequest(string[] fields)
+        public void SendSecurityListRequest(string[] fields)
         {
             QuickFix.FIX44.SecurityListRequest message = new(new SecurityReqID(fields[0]), new SecurityListRequestType(Convert.ToInt32(fields[1])));
 
@@ -456,7 +461,7 @@ namespace ConsoleSample
             SendMessage(message);
         }
 
-        private void SendOrderStatusRequest(string[] fields)
+        public void SendOrderStatusRequest(string[] fields)
         {
             QuickFix.FIX44.OrderStatusRequest message = new()
             {
@@ -469,59 +474,6 @@ namespace ConsoleSample
             }
 
             SendMessage(message);
-        }
-
-        private void ShowMessageData<TMessage>(TMessage message) where TMessage : Message
-        {
-            var properties = message.GetType().GetProperties();
-
-            var ignoredPropertyNames = new string[] { "Header", "Trailer", "RepeatedTags", "FieldOrder" };
-
-            var stringBuilder = new StringBuilder();
-
-            stringBuilder.AppendLine("Response: ");
-
-            stringBuilder.AppendLine("{");
-
-            foreach (var property in properties)
-            {
-                if (property.CanRead is false || ignoredPropertyNames.Contains(property.Name, StringComparer.OrdinalIgnoreCase)) continue;
-
-                try
-                {
-                    stringBuilder.AppendLine($"    {property.Name}: \"{property.GetValue(message)}\",");
-                }
-                catch (ApplicationException)
-                {
-                }
-            }
-
-            stringBuilder.AppendLine("    All Fields: ");
-            stringBuilder.AppendLine("    [");
-
-            var fields = message.ToString().Split('').Where(field => string.IsNullOrWhiteSpace(field) is false).ToArray();
-
-            var lastField = fields.Last();
-
-            foreach (var field in fields)
-            {
-                var tagValue = field.Split('=');
-
-                if (tagValue.Length < 2) continue;
-
-                var comma = field.Equals(lastField, StringComparison.OrdinalIgnoreCase) ? "" : ",";
-
-                stringBuilder.AppendLine($"        {{{tagValue[0]}: \"{tagValue[1]}\"}}{comma}");
-            }
-
-            stringBuilder.AppendLine("    ],");
-            stringBuilder.AppendLine($"    Raw: \"{message.ToString().Replace('', '|')}\"");
-
-            stringBuilder.AppendLine("}");
-
-            Console.WriteLine();
-            Console.WriteLine(stringBuilder);
-            Console.WriteLine();
         }
     }
 }
