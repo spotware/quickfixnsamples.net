@@ -37,14 +37,14 @@ namespace ConsoleSample
                 var username = defaultSettings.GetString("Username");
                 var password = defaultSettings.GetString("Password");
 
-                _application = new(username, password, sessionId);
+                _application = new(username, password, sessionId.SenderCompID, sessionId.SenderSubID, sessionId.TargetCompID);
                 IMessageStoreFactory storeFactory = new FileStoreFactory(settings);
 
                 _initiator = new(_application, storeFactory, settings);
 
                 _initiator.Start();
 
-                _application.MessagesBuffer.LinkTo(new ActionBlock<Message>(message => ShowMessageData(message)), new DataflowLinkOptions { PropagateCompletion = true });
+                _application.IncomingMessagesBuffer.LinkTo(new ActionBlock<Message>(message => ShowMessageData(message)), new DataflowLinkOptions { PropagateCompletion = true });
 
                 Run();
 
@@ -198,54 +198,8 @@ namespace ConsoleSample
 
             if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
 
-            var properties = message.GetType().GetProperties();
-
-            var ignoredPropertyNames = new string[] { "Header", "Trailer", "RepeatedTags", "FieldOrder" };
-
-            var stringBuilder = new StringBuilder();
-
-            stringBuilder.AppendLine("Response: ");
-
-            stringBuilder.AppendLine("{");
-
-            foreach (var property in properties)
-            {
-                if (property.CanRead is false || ignoredPropertyNames.Contains(property.Name, StringComparer.OrdinalIgnoreCase)) continue;
-
-                try
-                {
-                    stringBuilder.AppendLine($"    {property.Name}: \"{property.GetValue(message)}\",");
-                }
-                catch (ApplicationException)
-                {
-                }
-            }
-
-            stringBuilder.AppendLine("    All Fields: ");
-            stringBuilder.AppendLine("    [");
-
-            var fields = message.ToString().Split('').Where(field => string.IsNullOrWhiteSpace(field) is false).ToArray();
-
-            var lastField = fields.Last();
-
-            foreach (var field in fields)
-            {
-                var tagValue = field.Split('=');
-
-                if (tagValue.Length < 2) continue;
-
-                var comma = field.Equals(lastField, StringComparison.OrdinalIgnoreCase) ? "" : ",";
-
-                stringBuilder.AppendLine($"        {{{tagValue[0]}: \"{tagValue[1]}\"}}{comma}");
-            }
-
-            stringBuilder.AppendLine("    ],");
-            stringBuilder.AppendLine($"    Raw: \"{message.ToString().Replace('', '|')}\"");
-
-            stringBuilder.AppendLine("}");
-
             Console.WriteLine();
-            Console.WriteLine(stringBuilder);
+            Console.WriteLine(message.GetMessageText());
             Console.WriteLine();
         }
 
@@ -418,7 +372,7 @@ namespace ConsoleSample
         {
             QuickFix.FIX44.OrderStatusRequest message = new()
             {
-                ClOrdID = new ClOrdID(fields[0])
+                ClOrdID = new ClOrdID(fields[0]),
             };
 
             if (fields.Length >= 2)

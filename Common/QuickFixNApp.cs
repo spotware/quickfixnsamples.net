@@ -11,17 +11,23 @@ namespace Common
 
         private readonly string _username;
         private readonly string _password;
-        private readonly SessionID _sessionId;
-        private readonly BufferBlock<Message> _messagesBuffer = new();
+        private readonly string _senderCompId;
+        private readonly string _senderSubId;
+        private readonly string _targetCompId;
+        private readonly BufferBlock<Message> _incomingMessagesBuffer = new();
+        private readonly BufferBlock<Message> _outgoingMessagesBuffer = new();
 
-        public QuickFixNApp(string username, string password, SessionID sessionId)
+        public QuickFixNApp(string username, string password, string senderCompId, string senderSubId, string targetCompId)
         {
             _username = username;
             _password = password;
-            _sessionId = sessionId;
+            _senderCompId = senderCompId;
+            _senderSubId = senderSubId;
+            _targetCompId = targetCompId;
         }
 
-        public ISourceBlock<Message> MessagesBuffer => _messagesBuffer;
+        public ISourceBlock<Message> IncomingMessagesBuffer => _incomingMessagesBuffer;
+        public ISourceBlock<Message> OutgoingMessagesBuffer => _outgoingMessagesBuffer;
 
         public bool IsDisposed { get; private set; }
 
@@ -48,18 +54,20 @@ namespace Common
 
         public async void FromAdmin(Message message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
-        public void ToAdmin(Message message, SessionID sessionID)
+        public async void ToAdmin(Message message, SessionID sessionID)
         {
+            await _outgoingMessagesBuffer.SendAsync(message);
+
             var messageType = message.Header.GetString(35);
 
             if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase)) return;
 
-            message.SetField(new StringField(49, _sessionId.SenderCompID));
-            message.SetField(new StringField(56, _sessionId.TargetCompID));
-            message.SetField(new StringField(50, _sessionId.SenderSubID));
+            message.SetField(new StringField(49, _senderCompId));
+            message.SetField(new StringField(56, _targetCompId));
+            message.SetField(new StringField(50, _senderSubId));
             message.SetField(new StringField(52, DateTimeOffset.UtcNow.ToString("yyyyMMdd-HH:mm:ss")));
             message.SetField(new StringField(553, _username));
             message.SetField(new StringField(554, _password));
@@ -70,21 +78,9 @@ namespace Common
             Crack(message, sessionID);
         }
 
-        public void ToApp(Message message, SessionID sessionID)
+        public async void ToApp(Message message, SessionID sessionID)
         {
-            try
-            {
-                bool possDupFlag = false;
-                if (message.Header.IsSetField(Tags.PossDupFlag))
-                {
-                    possDupFlag = QuickFix.Fields.Converters.BoolConverter.Convert(
-                        message.Header.GetString(Tags.PossDupFlag)); /// FIXME
-                }
-                if (possDupFlag)
-                    throw new DoNotSend();
-            }
-            catch (FieldNotFoundException)
-            { }
+            await _outgoingMessagesBuffer.SendAsync(message);
         }
 
         #endregion IApplication interface overrides
@@ -93,57 +89,57 @@ namespace Common
 
         public async void OnMessage(QuickFix.FIX44.NewOrderSingle message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.SecurityDefinition message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.SecurityList message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.MarketDataIncrementalRefresh message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.MarketDataSnapshotFullRefresh message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.MarketDataRequestReject message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.PositionReport message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.OrderCancelReject message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.ExecutionReport message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         public async void OnMessage(QuickFix.FIX44.BusinessMessageReject message, SessionID sessionID)
         {
-            await _messagesBuffer.SendAsync(message);
+            await _incomingMessagesBuffer.SendAsync(message);
         }
 
         #endregion Message cracker
 
-        #region Message
+        #region Message sender
 
         public void SendMessage(Message message)
         {
@@ -157,7 +153,7 @@ namespace Common
             }
         }
 
-        #endregion Message
+        #endregion Message sender
 
         #region IDisposable
 
@@ -167,7 +163,8 @@ namespace Common
 
             IsDisposed = true;
 
-            _messagesBuffer.Complete();
+            _incomingMessagesBuffer.Complete();
+            _outgoingMessagesBuffer.Complete();
         }
 
         #endregion IDisposable
