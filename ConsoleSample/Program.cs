@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks.Dataflow;
 using QuickFix.Fields;
 using System.Globalization;
+using Common;
 
 namespace ConsoleSample
 {

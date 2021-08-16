@@ -3,7 +3,7 @@ using System.Threading.Tasks.Dataflow;
 using QuickFix;
 using QuickFix.Fields;
 
-namespace ConsoleSample
+namespace Common
 {
     public class QuickFixNApp : MessageCracker, IApplication, IDisposable
     {
