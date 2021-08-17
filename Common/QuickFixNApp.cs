@@ -5,7 +5,7 @@ using QuickFix.Fields;
 
 namespace Common
 {
-    public class QuickFixNApp : MessageCracker, IApplication, IDisposable
+    public sealed class QuickFixNApp : MessageCracker, IApplication, IDisposable
     {
         private Session _session = null;
 

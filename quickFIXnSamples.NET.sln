@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleSample", "ConsoleSam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsSample", "WinFormsSample\WinFormsSample.csproj", "{E3F1B130-77B5-4211-8CE0-82C6BCE43F66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{99BC0F9F-E07C-4E11-B0DD-02C30388B254}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{99BC0F9F-E07C-4E11-B0DD-02C30388B254}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfSample", "WpfSample\WpfSample.csproj", "{3ED82ADD-5777-4789-88EC-4286CF51A79D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{99BC0F9F-E07C-4E11-B0DD-02C30388B254}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99BC0F9F-E07C-4E11-B0DD-02C30388B254}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99BC0F9F-E07C-4E11-B0DD-02C30388B254}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

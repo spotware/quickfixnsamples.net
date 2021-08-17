@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks.Dataflow;
 using QuickFix.Fields;
 using System.Globalization;
@@ -119,7 +118,7 @@ namespace ConsoleSample
             Console.WriteLine("To skip an optional field you can set its value to 0");
 
             Console.Write("\n"
-                + "1) Enter New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*orderQty|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
+                + "1) New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*orderQty|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
                 + "2) Cancel Order (*origClOrdID|*clOrdID|orderId, ex: 2|OrderClientID|CancelOrder)\n"
                 + "3) Replace Order (*origClOrdID|*clOrdID|*orderQty|orderId|price|stopPx|expireTime, ex: 3|OrderClientID|CancelOrder|30000|0|1.27)\n"
                 + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
@@ -151,7 +150,7 @@ namespace ConsoleSample
             switch (action)
             {
                 case '1':
-                    SendEnterOrder(fields);
+                    SendNewOrderSingle(fields);
 
                     break;
 
@@ -203,7 +202,7 @@ namespace ConsoleSample
             Console.WriteLine();
         }
 
-        private static void SendEnterOrder(string[] fields)
+        private static void SendNewOrderSingle(string[] fields)
         {
             var ordType = new OrdType(fields[3].ToLowerInvariant() switch
             {

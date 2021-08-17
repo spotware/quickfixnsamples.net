@@ -269,7 +269,7 @@
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "frmFIXAPISample";
             this.ShowIcon = false;
-            this.Text = "Fix API Sample";
+            this.Text = "FIX API Sample";
             this.gbPriceStream.ResumeLayout(false);
             this.gbTradeStream.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
