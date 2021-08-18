@@ -5,9 +5,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:WpfSample"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
     Title="FIX Sample"
     Width="800"
     Height="450"
+    Closing="Window_Closing"
+    Loaded="Window_Loaded"
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
@@ -49,8 +52,8 @@
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="5"
-                            ItemsSource="{Binding Path=OrderTypes}"
-                            SelectedItem="{Binding Path=SelectedOrderType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            ItemsSource="{Binding Path=NewOrderModel.OrderTypes}"
+                            SelectedItem="{Binding Path=NewOrderModel.SelectedOrderType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="1"
@@ -61,8 +64,8 @@
                             Grid.Row="1"
                             Grid.Column="1"
                             Margin="5"
-                            ItemsSource="{Binding Path=TradeSides}"
-                            SelectedItem="{Binding Path=SelectedTradeSide, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            ItemsSource="{Binding Path=NewOrderModel.TradeSides}"
+                            SelectedItem="{Binding Path=NewOrderModel.SelectedTradeSide, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="2"
@@ -73,8 +76,9 @@
                             Grid.Row="2"
                             Grid.Column="1"
                             Margin="5"
+                            DisplayMemberPath="Name"
                             ItemsSource="{Binding Path=Symbols}"
-                            SelectedItem="{Binding Path=SelectedSymbol, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            SelectedItem="{Binding Path=NewOrderModel.SelectedSymbol, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="3"
@@ -85,7 +89,7 @@
                             Grid.Row="3"
                             Grid.Column="1"
                             Margin="5"
-                            Text="{Binding Path=Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{Binding Path=NewOrderModel.Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" />
 
                         <TextBlock
                             Grid.Row="4"
@@ -96,8 +100,8 @@
                             Grid.Row="4"
                             Grid.Column="1"
                             Margin="5"
-                            IsEnabled="{Binding Path=IsPendingOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            Text="{Binding Path=TargetPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            IsEnabled="{Binding Path=NewOrderModel.IsPendingOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding Path=NewOrderModel.TargetPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" />
 
                         <TextBlock
                             Grid.Row="5"
@@ -108,8 +112,8 @@
                             Grid.Row="5"
                             Grid.Column="1"
                             Margin="5"
-                            IsEnabled="{Binding Path=IsMarketOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            Text="{Binding Path=PositionId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            IsEnabled="{Binding Path=NewOrderModel.IsMarketOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Text="{Binding Path=NewOrderModel.PositionId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="6"
@@ -120,7 +124,7 @@
                             Grid.Row="6"
                             Grid.Column="1"
                             Margin="5"
-                            Text="{Binding Path=ClOrdId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{Binding Path=NewOrderModel.ClOrdId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="7"
@@ -131,8 +135,9 @@
                             Grid.Row="7"
                             Grid.Column="1"
                             Margin="5"
-                            IsEnabled="{Binding Path=IsPendingOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedDate="{Binding Path=Expiry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            DisplayDateStart="{Binding Source={x:Static system:DateTime.Now}, Mode=OneWay}"
+                            IsEnabled="{Binding Path=NewOrderModel.IsPendingOrder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedDate="{Binding Path=NewOrderModel.Expiry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock
                             Grid.Row="8"
@@ -143,7 +148,7 @@
                             Grid.Row="8"
                             Grid.Column="1"
                             Margin="5"
-                            Text="{Binding Path=Designation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            Text="{Binding Path=NewOrderModel.Designation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <Button
                             Grid.Row="9"
@@ -153,13 +158,16 @@
                             Padding="3"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
+                            Click="SendNewOrderButton_Click"
                             Content="Send New Order Request" />
                     </Grid>
                 </ScrollViewer>
 
             </GroupBox>
 
-            <DataGrid Grid.Column="1" />
+            <GroupBox Grid.Column="1">
+                <DataGrid AutoGenerateColumns="True" ItemsSource="{Binding Path=Symbols, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+            </GroupBox>
         </Grid>
         <DataGrid Grid.Row="1" />
     </Grid>

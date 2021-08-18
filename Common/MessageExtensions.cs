@@ -1,7 +1,9 @@
 ﻿using QuickFix;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Common
 {
@@ -51,11 +53,36 @@ namespace Common
             }
 
             stringBuilder.AppendLine("    ],");
-            stringBuilder.AppendLine($"    Raw: \"{message.ToString().Replace('', '|')}\"");
+            stringBuilder.AppendLine($"    Raw: \"{message.ToString('|')}\"");
 
             stringBuilder.AppendLine("}");
 
             return stringBuilder.ToString();
         }
+
+        public static string ToString<TMessage>(this TMessage message, char separator) where TMessage : Message => message.ToString().Replace('', separator);
+
+        public static IEnumerable<Symbol> GetSymbols(this QuickFix.FIX44.SecurityList message)
+        {
+            var symbolsFields = message.ToString('|').Split("|55=", StringSplitOptions.RemoveEmptyEntries).Skip(1).ToArray();
+
+            foreach (var symbolFields in symbolsFields)
+            {
+                var symbolFieldsSplit = symbolFields.Split('|');
+
+                if (symbolFieldsSplit.Length < 3
+                    || long.TryParse(symbolFieldsSplit[0], NumberStyles.Any, CultureInfo.InvariantCulture, out var symbolId) is false
+                    || int.TryParse(symbolFieldsSplit[2].Substring(5), NumberStyles.Any, CultureInfo.InvariantCulture, out var symbolDigits) is false)
+                {
+                    continue;
+                }
+
+                var symbolName = symbolFieldsSplit[1].Substring(5);
+
+                yield return new Symbol(symbolId, symbolName, symbolDigits);
+            }
+        }
     }
+
+    public record Symbol(long Id, string Name, int Digits);
 }

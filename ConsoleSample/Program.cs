@@ -7,6 +7,7 @@ using System.Threading.Tasks.Dataflow;
 using QuickFix.Fields;
 using System.Globalization;
 using Common;
+using Symbol = QuickFix.Fields.Symbol;
 
 namespace ConsoleSample
 {

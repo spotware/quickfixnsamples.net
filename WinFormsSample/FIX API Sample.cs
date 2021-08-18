@@ -7,6 +7,7 @@ using QuickFix.Transport;
 using Common;
 using QuickFix.Fields;
 using System.Threading.Tasks.Dataflow;
+using Symbol = QuickFix.Fields.Symbol;
 
 namespace WinFormsSample
 {
@@ -41,8 +42,8 @@ namespace WinFormsSample
             _tradeApp = new(_username, _password, _senderCompId, _senderSubId, "cServer");
             _quoteApp = new(_username, _password, _senderCompId, _senderSubId, "cServer");
 
-            var incomingMessagesProcessingBlock = new ActionBlock<QuickFix.Message>(message => ProcessIncomingMessage(message));
-            var outgoingMessagesProcessingBlock = new ActionBlock<QuickFix.Message>(message => ProcessOutgoingMessage(message));
+            var incomingMessagesProcessingBlock = new ActionBlock<QuickFix.Message>(ProcessIncomingMessage);
+            var outgoingMessagesProcessingBlock = new ActionBlock<QuickFix.Message>(ProcessOutgoingMessage);
 
             var linkOptions = new DataflowLinkOptions { PropagateCompletion = true };
 
@@ -52,8 +53,8 @@ namespace WinFormsSample
             _tradeApp.OutgoingMessagesBuffer.LinkTo(outgoingMessagesProcessingBlock, linkOptions);
             _quoteApp.OutgoingMessagesBuffer.LinkTo(outgoingMessagesProcessingBlock, linkOptions);
 
-            var tradeSettings = GetSessionSettings(_host, _tradePort, _senderCompId, _senderSubId, _tradeTargetSubID);
-            var quoteSettings = GetSessionSettings(_host, _quotePort, _senderCompId, _senderSubId, _quoteTargetSubID);
+            var tradeSettings = SessionSettingsFactory.GetSessionSettings(_host, _tradePort, _senderCompId, _senderSubId, _tradeTargetSubID);
+            var quoteSettings = SessionSettingsFactory.GetSessionSettings(_host, _quotePort, _senderCompId, _senderSubId, _quoteTargetSubID);
 
             var tradeStoreFactory = new FileStoreFactory(tradeSettings);
             var quoteStoreFactory = new FileStoreFactory(quoteSettings);
@@ -88,37 +89,6 @@ namespace WinFormsSample
         private void ProcessOutgoingMessage(QuickFix.Message message)
         {
             Invoke(new Action(() => txtMessageSend.Text = $"{txtMessageSend.Text}\n{message.GetMessageText()}"));
-        }
-
-        private SessionSettings GetSessionSettings(string host, int port, string senderCompId, string senderSubId, string targetSubId)
-        {
-            var stringBuilder = new StringBuilder();
-
-            stringBuilder.AppendLine("[DEFAULT]");
-            stringBuilder.AppendLine("ConnectionType=initiator");
-            stringBuilder.AppendLine("ReconnectInterval=2");
-            stringBuilder.AppendLine("FileStorePath=store");
-            stringBuilder.AppendLine("FileLogPath=log");
-            stringBuilder.AppendLine("StartTime=00:00:00");
-            stringBuilder.AppendLine("EndTime=00:00:00");
-            stringBuilder.AppendLine("UseDataDictionary=Y");
-            stringBuilder.AppendLine("DataDictionary=./FIX44-CSERVER.xml");
-            stringBuilder.AppendLine($"SocketConnectHost={host}");
-            stringBuilder.AppendLine($"SocketConnectPort={port}");
-            stringBuilder.AppendLine("LogoutTimeout=100");
-            stringBuilder.AppendLine("ResetOnLogon=Y");
-            stringBuilder.AppendLine("ResetOnDisconnect=Y");
-            stringBuilder.AppendLine("[SESSION]");
-            stringBuilder.AppendLine("BeginString=FIX.4.4");
-            stringBuilder.AppendLine($"SenderCompID={senderCompId}");
-            stringBuilder.AppendLine($"SenderSubID={senderSubId}");
-            stringBuilder.AppendLine($"TargetSubID={targetSubId}");
-            stringBuilder.AppendLine("TargetCompID=cServer");
-            stringBuilder.AppendLine("HeartBtInt=30");
-
-            var stringReader = new StringReader(stringBuilder.ToString());
-
-            return new SessionSettings(stringReader);
         }
 
         private void clearSentButton_Click(object sender, EventArgs e)
