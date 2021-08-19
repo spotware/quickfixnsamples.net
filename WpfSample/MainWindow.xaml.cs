@@ -4,6 +4,7 @@ using QuickFix.Fields;
 using QuickFix.Transport;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -79,25 +80,77 @@ namespace WpfSample
             DataContext = MainModel;
         }
 
+        private async void AddLog(LogModel log) => await Dispatcher.InvokeAsync(() =>
+        {
+            MainModel.Logs.Add(log);
+        });
+
         public MainModel MainModel { get; } = new MainModel();
 
         private void ProcessOutgoingMessage(Message message)
         {
+            if (message is QuickFix.FIX44.MarketDataRequest) return;
+
+            AddLog(new LogModel("Sent", DateTime.Now, message.ToString('|')));
         }
 
-        private async void ProcessIncomingMessage(Message message)
+        private async void ProcessIncomingMessage(Message message) => await Dispatcher.InvokeAsync(() =>
         {
+            if (message is not QuickFix.FIX44.MarketDataSnapshotFullRefresh)
+            {
+                AddLog(new LogModel("Received", DateTime.Now, message.ToString('|')));
+            }
+
             switch (message)
             {
                 case QuickFix.FIX44.SecurityList securityList:
+                    OnSecurityList(securityList);
+                    break;
 
-                    foreach (var symbol in securityList.GetSymbols())
-                    {
-                        await Dispatcher.InvokeAsync(() => MainModel.Symbols.Add(new SymbolModel { Name = symbol.Name, Id = symbol.Id, Digits = symbol.Digits }));
-                    }
-
+                case QuickFix.FIX44.MarketDataSnapshotFullRefresh marketDataSnapshotFullRefresh:
+                    OnMarketDataSnapshotFullRefresh(marketDataSnapshotFullRefresh);
                     break;
             }
+        });
+
+        private void OnSecurityList(QuickFix.FIX44.SecurityList securityList)
+        {
+            var symbols = securityList.GetSymbols();
+
+            foreach (var symbol in symbols)
+            {
+                MainModel.Symbols.Add(new SymbolModel { Name = symbol.Name, Id = symbol.Id, Digits = symbol.Digits });
+
+                SendMarketDataRequest(true, symbol.Id);
+            }
+        }
+
+        private void OnMarketDataSnapshotFullRefresh(QuickFix.FIX44.MarketDataSnapshotFullRefresh marketDataSnapshotFullRefresh)
+        {
+            var symbolQuote = marketDataSnapshotFullRefresh.GetSymbolQuote();
+
+            var symbol = MainModel.Symbols.FirstOrDefault(symbol => symbol.Id == symbolQuote.SymbolId);
+
+            if (symbol is not null)
+            {
+                symbol.Bid = symbolQuote.Bid;
+                symbol.Ask = symbolQuote.Ask;
+            }
+        }
+
+        private void SendMarketDataRequest(bool subscribe, int symbolId)
+        {
+            QuickFix.FIX44.MarketDataRequest message = new(new("MARKETDATAID"), new(subscribe ? '1' : '2'), new(1));
+
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup bidMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('0') };
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup offerMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('1') };
+            message.AddGroup(bidMarketDataEntryGroup);
+            message.AddGroup(offerMarketDataEntryGroup);
+
+            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new() { Symbol = new QuickFix.Fields.Symbol(symbolId.ToString(CultureInfo.InvariantCulture)) };
+            message.AddGroup(symbolGroup);
+
+            _quoteApp.SendMessage(message);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

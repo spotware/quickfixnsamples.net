@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using QuickFix.Fields;
 
 namespace Common
 {
@@ -60,29 +61,70 @@ namespace Common
             return stringBuilder.ToString();
         }
 
-        public static string ToString<TMessage>(this TMessage message, char separator) where TMessage : Message => message.ToString().Replace('', separator);
+        public static string ToString<TMessage>(this TMessage message, char separator) where TMessage : Message
+        {
+            try
+            {
+                return message.ToString().Replace('', separator);
+            }
+            catch (InvalidOperationException)
+            {
+                return string.Empty;
+            }
+        }
 
         public static IEnumerable<Symbol> GetSymbols(this QuickFix.FIX44.SecurityList message)
         {
-            var symbolsFields = message.ToString('|').Split("|55=", StringSplitOptions.RemoveEmptyEntries).Skip(1).ToArray();
+            var numberOfGroups = message.GetInt(Tags.NoRelatedSym);
 
-            foreach (var symbolFields in symbolsFields)
+            var symbolField = new IntField(Tags.Symbol);
+            var symbolNameField = new StringField(Tags.SideReasonCd);
+            var symbolDigitsField = new IntField(Tags.SideTrdSubTyp);
+
+            for (int groupIndex = 1; groupIndex <= numberOfGroups; groupIndex += 1)
             {
-                var symbolFieldsSplit = symbolFields.Split('|');
+                var group = message.GetGroup(groupIndex, Tags.NoRelatedSym);
 
-                if (symbolFieldsSplit.Length < 3
-                    || long.TryParse(symbolFieldsSplit[0], NumberStyles.Any, CultureInfo.InvariantCulture, out var symbolId) is false
-                    || int.TryParse(symbolFieldsSplit[2].Substring(5), NumberStyles.Any, CultureInfo.InvariantCulture, out var symbolDigits) is false)
-                {
-                    continue;
-                }
+                var symbolFieldValue = group.GetField(symbolField).getValue();
+                var symbolNameValue = group.GetField(symbolNameField).getValue();
+                var symbolDigitsFieldValue = group.GetField(symbolDigitsField).getValue();
 
-                var symbolName = symbolFieldsSplit[1].Substring(5);
-
-                yield return new Symbol(symbolId, symbolName, symbolDigits);
+                yield return new Symbol(symbolFieldValue, symbolNameValue, symbolDigitsFieldValue);
             }
+        }
+
+        public static SymbolQuote GetSymbolQuote(this QuickFix.FIX44.MarketDataSnapshotFullRefresh message)
+        {
+            var numberOfGroups = message.GetInt(Tags.NoMDEntries);
+
+            decimal bid = 0;
+            decimal ask = 0;
+
+            var mdEntryTypeField = new CharField(Tags.MDEntryType);
+            var mdEntryPxField = new DecimalField(Tags.MDEntryPx);
+
+            for (int groupIndex = 1; groupIndex <= numberOfGroups; groupIndex += 1)
+            {
+                var group = message.GetGroup(groupIndex, Tags.NoMDEntries);
+
+                var mdEntryTypeFieldValue = group.GetField(mdEntryTypeField).getValue();
+                var mdEntryPxFieldValue = group.GetField(mdEntryPxField).getValue();
+
+                if (mdEntryTypeFieldValue == '0')
+                {
+                    bid = mdEntryPxFieldValue;
+                }
+                else if (mdEntryTypeFieldValue == '1')
+                {
+                    ask = mdEntryPxFieldValue;
+                }
+            }
+
+            return new SymbolQuote(message.GetField(new IntField(Tags.Symbol)).getValue(), bid, ask);
         }
     }
 
-    public record Symbol(long Id, string Name, int Digits);
+    public record Symbol(int Id, string Name, int Digits);
+
+    public record SymbolQuote(int SymbolId, decimal Bid, decimal Ask);
 }

@@ -30,12 +30,14 @@
         {
             this.components = new System.ComponentModel.Container();
             this.lblHeartbeatMessage = new System.Windows.Forms.Label();
-            this.btnDepthMarketDataRequest = new System.Windows.Forms.Button();
+            this.btnSubscribeDepthMarketDataRequest = new System.Windows.Forms.Button();
             this.btnNewOrderSingle = new System.Windows.Forms.Button();
             this.btnOrderStatusRequest = new System.Windows.Forms.Button();
             this.btnRequestForPositions = new System.Windows.Forms.Button();
             this.gbPriceStream = new System.Windows.Forms.GroupBox();
-            this.btnSpotMarketData = new System.Windows.Forms.Button();
+            this.btnUnsubscribeDepthMarketDataRequest = new System.Windows.Forms.Button();
+            this.btnUnsubscribeSpotMarketDataRequest = new System.Windows.Forms.Button();
+            this.btnSubscribeSpotMarketData = new System.Windows.Forms.Button();
             this.gbTradeStream = new System.Windows.Forms.GroupBox();
             this.btnStopOrder = new System.Windows.Forms.Button();
             this.btnLimitOrder = new System.Windows.Forms.Button();
@@ -62,17 +64,17 @@
             this.lblHeartbeatMessage.Size = new System.Drawing.Size(0, 15);
             this.lblHeartbeatMessage.TabIndex = 3;
             // 
-            // btnDepthMarketDataRequest
+            // btnSubscribeDepthMarketDataRequest
             // 
-            this.btnDepthMarketDataRequest.Location = new System.Drawing.Point(8, 56);
-            this.btnDepthMarketDataRequest.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnDepthMarketDataRequest.Name = "btnDepthMarketDataRequest";
-            this.btnDepthMarketDataRequest.Size = new System.Drawing.Size(187, 27);
-            this.btnDepthMarketDataRequest.TabIndex = 5;
-            this.btnDepthMarketDataRequest.TabStop = false;
-            this.btnDepthMarketDataRequest.Text = "Depth Market Data Request";
-            this.btnDepthMarketDataRequest.UseVisualStyleBackColor = true;
-            this.btnDepthMarketDataRequest.Click += new System.EventHandler(this.btnMarketDataRequest_Click);
+            this.btnSubscribeDepthMarketDataRequest.Location = new System.Drawing.Point(8, 90);
+            this.btnSubscribeDepthMarketDataRequest.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnSubscribeDepthMarketDataRequest.Name = "btnSubscribeDepthMarketDataRequest";
+            this.btnSubscribeDepthMarketDataRequest.Size = new System.Drawing.Size(249, 27);
+            this.btnSubscribeDepthMarketDataRequest.TabIndex = 5;
+            this.btnSubscribeDepthMarketDataRequest.TabStop = false;
+            this.btnSubscribeDepthMarketDataRequest.Text = "Subscribe Depth Market Data Request";
+            this.btnSubscribeDepthMarketDataRequest.UseVisualStyleBackColor = true;
+            this.btnSubscribeDepthMarketDataRequest.Click += new System.EventHandler(this.btnSubscribeDepthMarketDataRequest_Click);
             // 
             // btnNewOrderSingle
             // 
@@ -109,27 +111,53 @@
             // 
             // gbPriceStream
             // 
-            this.gbPriceStream.Controls.Add(this.btnSpotMarketData);
-            this.gbPriceStream.Controls.Add(this.btnDepthMarketDataRequest);
+            this.gbPriceStream.Controls.Add(this.btnUnsubscribeDepthMarketDataRequest);
+            this.gbPriceStream.Controls.Add(this.btnUnsubscribeSpotMarketDataRequest);
+            this.gbPriceStream.Controls.Add(this.btnSubscribeSpotMarketData);
+            this.gbPriceStream.Controls.Add(this.btnSubscribeDepthMarketDataRequest);
             this.gbPriceStream.Location = new System.Drawing.Point(18, 16);
             this.gbPriceStream.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.gbPriceStream.Name = "gbPriceStream";
             this.gbPriceStream.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.gbPriceStream.Size = new System.Drawing.Size(211, 296);
+            this.gbPriceStream.Size = new System.Drawing.Size(265, 296);
             this.gbPriceStream.TabIndex = 17;
             this.gbPriceStream.TabStop = false;
-            this.gbPriceStream.Text = "Price Stream";
+            this.gbPriceStream.Text = "Price";
             // 
-            // btnSpotMarketData
+            // btnUnsubscribeDepthMarketDataRequest
             // 
-            this.btnSpotMarketData.Location = new System.Drawing.Point(8, 22);
-            this.btnSpotMarketData.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnSpotMarketData.Name = "btnSpotMarketData";
-            this.btnSpotMarketData.Size = new System.Drawing.Size(187, 27);
-            this.btnSpotMarketData.TabIndex = 14;
-            this.btnSpotMarketData.Text = "Spot Market Data Request";
-            this.btnSpotMarketData.UseVisualStyleBackColor = true;
-            this.btnSpotMarketData.Click += new System.EventHandler(this.btnSpotMarketData_Click);
+            this.btnUnsubscribeDepthMarketDataRequest.Location = new System.Drawing.Point(8, 123);
+            this.btnUnsubscribeDepthMarketDataRequest.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnUnsubscribeDepthMarketDataRequest.Name = "btnUnsubscribeDepthMarketDataRequest";
+            this.btnUnsubscribeDepthMarketDataRequest.Size = new System.Drawing.Size(249, 27);
+            this.btnUnsubscribeDepthMarketDataRequest.TabIndex = 16;
+            this.btnUnsubscribeDepthMarketDataRequest.TabStop = false;
+            this.btnUnsubscribeDepthMarketDataRequest.Text = "Unsubscribe Depth Market Data Request";
+            this.btnUnsubscribeDepthMarketDataRequest.UseVisualStyleBackColor = true;
+            this.btnUnsubscribeDepthMarketDataRequest.Click += new System.EventHandler(this.btnUnsubscribeDepthMarketDataRequest_Click);
+            // 
+            // btnUnsubscribeSpotMarketDataRequest
+            // 
+            this.btnUnsubscribeSpotMarketDataRequest.Location = new System.Drawing.Point(8, 56);
+            this.btnUnsubscribeSpotMarketDataRequest.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnUnsubscribeSpotMarketDataRequest.Name = "btnUnsubscribeSpotMarketDataRequest";
+            this.btnUnsubscribeSpotMarketDataRequest.Size = new System.Drawing.Size(249, 27);
+            this.btnUnsubscribeSpotMarketDataRequest.TabIndex = 15;
+            this.btnUnsubscribeSpotMarketDataRequest.TabStop = false;
+            this.btnUnsubscribeSpotMarketDataRequest.Text = "Unsubscribe Spot Market Data Request";
+            this.btnUnsubscribeSpotMarketDataRequest.UseVisualStyleBackColor = true;
+            this.btnUnsubscribeSpotMarketDataRequest.Click += new System.EventHandler(this.btnUnsubscribeSpotMarketDataRequest_Click);
+            // 
+            // btnSubscribeSpotMarketData
+            // 
+            this.btnSubscribeSpotMarketData.Location = new System.Drawing.Point(8, 22);
+            this.btnSubscribeSpotMarketData.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnSubscribeSpotMarketData.Name = "btnSubscribeSpotMarketData";
+            this.btnSubscribeSpotMarketData.Size = new System.Drawing.Size(249, 27);
+            this.btnSubscribeSpotMarketData.TabIndex = 14;
+            this.btnSubscribeSpotMarketData.Text = "Subscribe Spot Market Data Request";
+            this.btnSubscribeSpotMarketData.UseVisualStyleBackColor = true;
+            this.btnSubscribeSpotMarketData.Click += new System.EventHandler(this.btnSubscribeSpotMarketData_Click);
             // 
             // gbTradeStream
             // 
@@ -139,14 +167,14 @@
             this.gbTradeStream.Controls.Add(this.btnRequestForPositions);
             this.gbTradeStream.Controls.Add(this.btnOrderStatusRequest);
             this.gbTradeStream.Controls.Add(this.btnNewOrderSingle);
-            this.gbTradeStream.Location = new System.Drawing.Point(236, 16);
+            this.gbTradeStream.Location = new System.Drawing.Point(291, 16);
             this.gbTradeStream.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.gbTradeStream.Name = "gbTradeStream";
             this.gbTradeStream.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.gbTradeStream.Size = new System.Drawing.Size(205, 296);
             this.gbTradeStream.TabIndex = 18;
             this.gbTradeStream.TabStop = false;
-            this.gbTradeStream.Text = "Trade Stream";
+            this.gbTradeStream.Text = "Trade";
             // 
             // btnStopOrder
             // 
@@ -185,7 +213,7 @@
             // 
             this.groupBox1.Controls.Add(this.clearSentButton);
             this.groupBox1.Controls.Add(this.txtMessageSend);
-            this.groupBox1.Location = new System.Drawing.Point(449, 16);
+            this.groupBox1.Location = new System.Drawing.Point(504, 16);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -225,7 +253,7 @@
             // 
             this.groupBox2.Controls.Add(this.clearReceivedButton);
             this.groupBox2.Controls.Add(this.txtMessageReceived);
-            this.groupBox2.Location = new System.Drawing.Point(662, 16);
+            this.groupBox2.Location = new System.Drawing.Point(717, 16);
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -260,7 +288,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(884, 320);
+            this.ClientSize = new System.Drawing.Size(935, 320);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.gbTradeStream);
@@ -283,14 +311,14 @@
 
         #endregion
         private System.Windows.Forms.Label lblHeartbeatMessage;
-        private System.Windows.Forms.Button btnDepthMarketDataRequest;
+        private System.Windows.Forms.Button btnSubscribeDepthMarketDataRequest;
         private System.Windows.Forms.Button btnNewOrderSingle;
         private System.Windows.Forms.Button btnOrderStatusRequest;
         private System.Windows.Forms.Button btnRequestForPositions;
         private System.Windows.Forms.GroupBox gbPriceStream;
         private System.Windows.Forms.GroupBox gbTradeStream;
         private System.Windows.Forms.Button btnSecurityListRequest;
-        private System.Windows.Forms.Button btnSpotMarketData;
+        private System.Windows.Forms.Button btnSubscribeSpotMarketData;
         private System.Windows.Forms.Button btnStopOrder;
         private System.Windows.Forms.Button btnLimitOrder;
         private System.Windows.Forms.GroupBox groupBox1;
@@ -300,6 +328,8 @@
         private System.Windows.Forms.TextBox txtMessageReceived;
         private System.Windows.Forms.Button clearSentButton;
         private System.Windows.Forms.Button clearReceivedButton;
+        private System.Windows.Forms.Button btnUnsubscribeDepthMarketDataRequest;
+        private System.Windows.Forms.Button btnUnsubscribeSpotMarketDataRequest;
     }
 }
 

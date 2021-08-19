@@ -13,5 +13,7 @@ namespace WpfSample.Models
         public NewOrderModel NewOrderModel { get; } = new NewOrderModel();
 
         public ObservableCollection<SymbolModel> Symbols { get; } = new ObservableCollection<SymbolModel>();
+
+        public ObservableCollection<LogModel> Logs { get; } = new ObservableCollection<LogModel>();
     }
 }

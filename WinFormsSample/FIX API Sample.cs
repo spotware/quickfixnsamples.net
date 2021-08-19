@@ -101,42 +101,24 @@ namespace WinFormsSample
             txtMessageReceived.Text = "";
         }
 
-        private void btnMarketDataRequest_Click(object sender, EventArgs e)
+        private void btnSubscribeSpotMarketData_Click(object sender, EventArgs e)
         {
-            MDReqID mdReqID = new("MARKETDATAID");
-            SubscriptionRequestType subType = new('1');
-            MarketDepth marketDepth = new(0);
-
-            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup marketDataEntryGroup = new();
-            marketDataEntryGroup.Set(new MDEntryType('1'));
-
-            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new();
-            symbolGroup.Set(new Symbol("1"));
-
-            QuickFix.FIX44.MarketDataRequest message = new(mdReqID, subType, marketDepth);
-            message.AddGroup(marketDataEntryGroup);
-            message.AddGroup(symbolGroup);
-
-            _quoteApp.SendMessage(message);
+            SendMarketDataRequest(true, false);
         }
 
-        private void btnSpotMarketData_Click(object sender, EventArgs e)
+        private void btnUnsubscribeSpotMarketDataRequest_Click(object sender, EventArgs e)
         {
-            MDReqID mdReqID = new("MARKETDATAID");
-            SubscriptionRequestType subType = new('1');
-            MarketDepth marketDepth = new(1);
+            SendMarketDataRequest(false, false);
+        }
 
-            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup marketDataEntryGroup = new();
-            marketDataEntryGroup.Set(new MDEntryType('1'));
+        private void btnSubscribeDepthMarketDataRequest_Click(object sender, EventArgs e)
+        {
+            SendMarketDataRequest(true, true);
+        }
 
-            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new();
-            symbolGroup.Set(new Symbol("1"));
-
-            QuickFix.FIX44.MarketDataRequest message = new(mdReqID, subType, marketDepth);
-            message.AddGroup(marketDataEntryGroup);
-            message.AddGroup(symbolGroup);
-
-            _quoteApp.SendMessage(message);
+        private void btnUnsubscribeDepthMarketDataRequest_Click(object sender, EventArgs e)
+        {
+            SendMarketDataRequest(false, true);
         }
 
         private void btnNewOrderSingle_Click(object sender, EventArgs e)
@@ -228,6 +210,26 @@ namespace WinFormsSample
             QuickFix.FIX44.SecurityListRequest message = new(new SecurityReqID("symbols"), new SecurityListRequestType(0));
 
             _tradeApp.SendMessage(message);
+        }
+
+        private void SendMarketDataRequest(bool subscribe, bool depth)
+        {
+            MDReqID mdReqID = new("MARKETDATAID");
+            SubscriptionRequestType subType = new(subscribe ? '1' : '2');
+            MarketDepth marketDepth = new(depth ? 0 : 1);
+
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup bidMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('0') };
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup offerMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('1') };
+
+            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new() { Symbol = new Symbol("1") };
+
+            QuickFix.FIX44.MarketDataRequest message = new(mdReqID, subType, marketDepth);
+
+            message.AddGroup(bidMarketDataEntryGroup);
+            message.AddGroup(offerMarketDataEntryGroup);
+            message.AddGroup(symbolGroup);
+
+            _quoteApp.SendMessage(message);
         }
     }
 }

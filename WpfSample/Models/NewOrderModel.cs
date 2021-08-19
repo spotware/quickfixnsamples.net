@@ -9,7 +9,7 @@ namespace WpfSample.Models
     {
         private string _selectedOrderType;
         private string _selectedTradeSide;
-        private Symbol _selectedSymbol;
+        private SymbolModel _selectedSymbol;
         private double _quantity;
         private bool _isPendingOrder;
         private bool _isMarketOrder;
@@ -42,7 +42,7 @@ namespace WpfSample.Models
             set => SetProperty(ref _selectedTradeSide, value);
         }
 
-        public Symbol SelectedSymbol
+        public SymbolModel SelectedSymbol
         {
             get => _selectedSymbol;
             set => SetProperty(ref _selectedSymbol, value);

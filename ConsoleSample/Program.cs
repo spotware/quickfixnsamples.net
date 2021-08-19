@@ -44,7 +44,27 @@ namespace ConsoleSample
 
                 _initiator.Start();
 
-                _application.IncomingMessagesBuffer.LinkTo(new ActionBlock<Message>(message => ShowMessageData(message)), new DataflowLinkOptions { PropagateCompletion = true });
+                var dataflowLinkOptions = new DataflowLinkOptions { PropagateCompletion = true };
+
+                _application.IncomingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
+                {
+                    var messageType = message.Header.GetString(35);
+
+                    if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
+
+                    Console.WriteLine("\nIncoming:");
+                    ShowMessageData(message);
+                }), dataflowLinkOptions);
+
+                _application.OutgoingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
+                {
+                    var messageType = message.Header.GetString(35);
+
+                    if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
+
+                    Console.WriteLine("\nOutgoing:");
+                    ShowMessageData(message);
+                }), dataflowLinkOptions);
 
                 Run();
 
@@ -122,11 +142,12 @@ namespace ConsoleSample
                 + "1) New Order (*clOrdID|*symbolId|*tradeSide (buy/sell)|*orderType (market, limit, stop)|*orderQty|posMaintRptID|price|expireTime|designation, ex: 1|newOrder|1|buy|market|10000)\n"
                 + "2) Cancel Order (*origClOrdID|*clOrdID|orderId, ex: 2|OrderClientID|CancelOrder)\n"
                 + "3) Replace Order (*origClOrdID|*clOrdID|*orderQty|orderId|price|stopPx|expireTime, ex: 3|OrderClientID|CancelOrder|30000|0|1.27)\n"
-                + "4) Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
-                + "5) Order Mass Status (*massStatusReqID|*massStatusReqType|issueDate, ex: 5|MassStatus|7)\n"
-                + "6) Request For Positions (*posReqID|posMaintRptID, ex: 6|Positions)\n"
-                + "7) Security List Request (*securityReqID|*securityListRequestType|symbol, ex: 7|symbols|0)\n"
-                + "8) Order Status Request (*clOrdID|side, ex: 8|MyOrders)\n"
+                + "4) Subscribe to Market data (*symoldID|*depth (y/n), ex: 4|1|n)\n"
+                + "5) Unsubscribe from Market data Market data (*symoldID|*depth (y/n), ex: 5|1|n)\n"
+                + "6) Order Mass Status (*massStatusReqID|*massStatusReqType|issueDate, ex: 6|MassStatus|7)\n"
+                + "7) Request For Positions (*posReqID|posMaintRptID, ex: 7|Positions)\n"
+                + "8) Security List Request (*securityReqID|*securityListRequestType|symbol, ex: 8|symbols|0)\n"
+                + "9) Order Status Request (*clOrdID|side, ex: 9|MyOrders)\n"
                 + "Q) Quit\n"
                 + "Action: "
             );
@@ -166,26 +187,31 @@ namespace ConsoleSample
                     break;
 
                 case '4':
-                    SendMarketDataRequest(fields);
+                    SendMarketDataRequest(fields, true);
 
                     break;
 
                 case '5':
-                    SendOrderMassStatusRequest(fields);
+                    SendMarketDataRequest(fields, false);
 
                     break;
 
                 case '6':
-                    SendRequestForPositions(fields);
+                    SendOrderMassStatusRequest(fields);
 
                     break;
 
                 case '7':
-                    SendSecurityListRequest(fields);
+                    SendRequestForPositions(fields);
 
                     break;
 
                 case '8':
+                    SendSecurityListRequest(fields);
+
+                    break;
+
+                case '9':
                     SendOrderStatusRequest(fields);
 
                     break;
@@ -194,11 +220,6 @@ namespace ConsoleSample
 
         private static void ShowMessageData<TMessage>(TMessage message) where TMessage : Message
         {
-            var messageType = message.Header.GetString(35);
-
-            if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
-
-            Console.WriteLine();
             Console.WriteLine(message.GetMessageText());
             Console.WriteLine();
         }
@@ -311,20 +332,21 @@ namespace ConsoleSample
             _application.SendMessage(message);
         }
 
-        private static void SendMarketDataRequest(string[] fields)
+        private static void SendMarketDataRequest(string[] fields, bool subscribe)
         {
             MDReqID mdReqID = new("MARKETDATAID");
-            SubscriptionRequestType subType = new('1');
-            MarketDepth marketDepth = new(fields[1].ToLowerInvariant().Equals("y", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+            SubscriptionRequestType subType = new(subscribe ? '1' : '2');
+            MarketDepth marketDepth = new(fields[1].ToLowerInvariant().Equals("y", StringComparison.OrdinalIgnoreCase) ? 0 : 1);
 
-            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup marketDataEntryGroup = new();
-            marketDataEntryGroup.Set(new MDEntryType('1'));
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup bidMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('0') };
+            QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup offerMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('1') };
 
-            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new();
-            symbolGroup.Set(new Symbol(fields[0]));
+            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new() { Symbol = new Symbol(fields[0]) };
 
             QuickFix.FIX44.MarketDataRequest message = new(mdReqID, subType, marketDepth);
-            message.AddGroup(marketDataEntryGroup);
+
+            message.AddGroup(bidMarketDataEntryGroup);
+            message.AddGroup(offerMarketDataEntryGroup);
             message.AddGroup(symbolGroup);
 
             _application.SendMessage(message);

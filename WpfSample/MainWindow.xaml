@@ -14,8 +14,8 @@
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="3*" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
@@ -169,6 +169,13 @@
                 <DataGrid AutoGenerateColumns="True" ItemsSource="{Binding Path=Symbols, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
             </GroupBox>
         </Grid>
-        <DataGrid Grid.Row="1" />
+        <TabControl Grid.Row="1">
+            <TabItem Header="Positions">
+                <DataGrid />
+            </TabItem>
+            <TabItem Header="Logs">
+                <DataGrid AutoGenerateColumns="True" ItemsSource="{Binding Path=Logs, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
