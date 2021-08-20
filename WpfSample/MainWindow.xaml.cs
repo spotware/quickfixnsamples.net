@@ -110,12 +110,59 @@ namespace WpfSample
                 case QuickFix.FIX44.MarketDataSnapshotFullRefresh marketDataSnapshotFullRefresh:
                     OnMarketDataSnapshotFullRefresh(marketDataSnapshotFullRefresh);
                     break;
+
+                case QuickFix.FIX44.PositionReport positionReport:
+                    OnPositionReport(positionReport);
+                    break;
+
+                case QuickFix.FIX44.ExecutionReport executionReport:
+                    OnExecutionReport(executionReport);
+                    break;
             }
         });
 
+        private void OnExecutionReport(QuickFix.FIX44.ExecutionReport executionReport)
+        {
+            var order = executionReport.GetOrder();
+
+            if (order.Type.Equals("Market", StringComparison.OrdinalIgnoreCase) && executionReport.CumQty.getValue() > 0)
+            {
+                SendPositionsRequest();
+            }
+            else if (order.Type.Equals("Market", StringComparison.OrdinalIgnoreCase) is false)
+            {
+                order.SymbolName = MainModel.Symbols.FirstOrDefault(symbol => symbol.Id == order.SymbolId)?.Name;
+
+                var previousOrder = MainModel.Orders.FirstOrDefault(iOrder => iOrder.Id == order.Id);
+
+                if (previousOrder is not null)
+                {
+                    MainModel.Orders.Remove(previousOrder);
+                }
+
+                var executionType = executionReport.ExecType.getValue();
+
+                if (executionType != '4' && executionType != '8' && executionType != 'C' && executionType != 'F')
+                {
+                    MainModel.Orders.Add(order);
+                }
+            }
+        }
+
+        private void OnPositionReport(QuickFix.FIX44.PositionReport positionReport)
+        {
+            if (positionReport.TotalNumPosReports.getValue() == 0) return;
+
+            var position = positionReport.GetPosition();
+
+            position.SymbolName = MainModel.Symbols.FirstOrDefault(symbol => symbol.Id == position.SymbolId)?.Name;
+
+            MainModel.Positions.Add(position);
+        }
+
         private void OnSecurityList(QuickFix.FIX44.SecurityList securityList)
         {
-            var symbols = securityList.GetSymbols();
+            var symbols = securityList.GetSymbols().OrderBy(symbol => symbol.Id);
 
             foreach (var symbol in symbols)
             {
@@ -123,6 +170,16 @@ namespace WpfSample
 
                 SendMarketDataRequest(true, symbol.Id);
             }
+
+            SendPositionsRequest();
+            SendOrderMassStatusRequest();
+        }
+
+        private void SendOrderMassStatusRequest()
+        {
+            QuickFix.FIX44.OrderMassStatusRequest message = new(new MassStatusReqID("Orders"), new MassStatusReqType(7));
+
+            _tradeApp.SendMessage(message);
         }
 
         private void OnMarketDataSnapshotFullRefresh(QuickFix.FIX44.MarketDataSnapshotFullRefresh marketDataSnapshotFullRefresh)
@@ -213,6 +270,17 @@ namespace WpfSample
             }
 
             message.Header.GetString(Tags.BeginString);
+
+            _tradeApp.SendMessage(message);
+        }
+
+        private void SendPositionsRequest()
+        {
+            QuickFix.FIX44.RequestForPositions message = new();
+
+            message.PosReqID = new PosReqID("Positions");
+
+            MainModel.Positions.Clear();
 
             _tradeApp.SendMessage(message);
         }

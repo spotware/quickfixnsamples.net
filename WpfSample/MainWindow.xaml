@@ -7,8 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=mscorlib"
     Title="FIX Sample"
-    Width="800"
-    Height="450"
+    Width="1000"
+    Height="750"
     Closing="Window_Closing"
     Loaded="Window_Loaded"
     mc:Ignorable="d">
@@ -166,15 +166,30 @@
             </GroupBox>
 
             <GroupBox Grid.Column="1">
-                <DataGrid AutoGenerateColumns="True" ItemsSource="{Binding Path=Symbols, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+                <DataGrid
+                    AutoGenerateColumns="True"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Path=Symbols, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
             </GroupBox>
         </Grid>
         <TabControl Grid.Row="1">
             <TabItem Header="Positions">
-                <DataGrid />
+                <DataGrid
+                    AutoGenerateColumns="True"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Path=Positions, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+            </TabItem>
+            <TabItem Header="Orders">
+                <DataGrid
+                    AutoGenerateColumns="True"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Path=Orders, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
             </TabItem>
             <TabItem Header="Logs">
-                <DataGrid AutoGenerateColumns="True" ItemsSource="{Binding Path=Logs, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+                <DataGrid
+                    AutoGenerateColumns="True"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Path=Logs, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
             </TabItem>
         </TabControl>
     </Grid>

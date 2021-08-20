@@ -122,9 +122,152 @@ namespace Common
 
             return new SymbolQuote(message.GetField(new IntField(Tags.Symbol)).getValue(), bid, ask);
         }
+
+        public static Position GetPosition(this QuickFix.FIX44.PositionReport message)
+        {
+            var noPositionsGroup = message.GetGroup(1, Tags.NoPositions);
+
+            var longVolume = noPositionsGroup.GetDecimal(704);
+            var shortVolume = noPositionsGroup.GetDecimal(705);
+
+            decimal volume;
+            string tradeSide;
+
+            if (longVolume > shortVolume)
+            {
+                volume = longVolume;
+                tradeSide = "Buy";
+            }
+            else
+            {
+                volume = shortVolume;
+                tradeSide = "Sell";
+            }
+
+            return new Position
+            {
+                Id = long.Parse(message.PosMaintRptID.getValue(), NumberStyles.Any, CultureInfo.InvariantCulture),
+                SymbolId = int.Parse(message.Symbol.getValue(), NumberStyles.Any, CultureInfo.InvariantCulture),
+                EntryPrice = message.SettlPrice.getValue(),
+                Volume = volume,
+                TradeSide = tradeSide,
+                StopLoss = message.IsSetField(1002) ? message.GetDecimal(1002) : 0,
+                TakeProfit = message.IsSetField(1000) ? message.GetDecimal(1000) : 0,
+                TrailingStopLoss = message.IsSetField(1004) ? message.GetBoolean(1004) : null,
+                GuaranteedStopLoss = message.IsSetField(1006) ? message.GetBoolean(1006) : null,
+                StopLossTriggerMethod = message.IsSetField(1005) ? message.GetInt(1005) switch
+                {
+                    1 => "Trade Side",
+                    2 => "Opposite Side",
+                    3 => "Double Trade Side",
+                    4 => "Double Opposite Side",
+                    _ => string.Empty
+                } : string.Empty
+            };
+        }
+
+        public static Order GetOrder(this QuickFix.FIX44.ExecutionReport message)
+        {
+            decimal targetPrice = 0;
+
+            if (message.IsSetField(44))
+            {
+                targetPrice = message.Price.getValue();
+            }
+            else if (message.IsSetField(99))
+            {
+                targetPrice = message.StopPx.getValue();
+            }
+
+            return new Order
+            {
+                Id = long.Parse(message.OrderID.getValue(), NumberStyles.Any, CultureInfo.InvariantCulture),
+                Type = message.GetInt(40) switch
+                {
+                    1 => "Market",
+                    2 => "Limit",
+                    3 => "Stop",
+                    _ => string.Empty
+                },
+                SymbolId = int.Parse(message.Symbol.getValue(), NumberStyles.Any, CultureInfo.InvariantCulture),
+                TargetPrice = targetPrice,
+                Volume = message.OrderQty.getValue(),
+                Time = message.TransactTime.getValue(),
+                TradeSide = message.GetInt(54) == 1 ? "Buy" : "Sell",
+                ExpireTime = message.IsSetField(126) ? message.ExpireTime.getValue() : null,
+                StopLossInPips = message.IsSetField(1003) ? message.GetDecimal(1003) : 0,
+                TakeProfitInPips = message.IsSetField(1001) ? message.GetDecimal(1001) : 0,
+                TrailingStopLoss = message.IsSetField(1004) ? message.GetBoolean(1004) : null,
+                GuaranteedStopLoss = message.IsSetField(1006) ? message.GetBoolean(1006) : null,
+                StopLossTriggerMethod = message.IsSetField(1005) ? message.GetInt(1005) switch
+                {
+                    1 => "Trade Side",
+                    2 => "Opposite Side",
+                    3 => "Double Trade Side",
+                    4 => "Double Opposite Side",
+                    _ => string.Empty
+                } : string.Empty
+            };
+        }
     }
 
     public record Symbol(int Id, string Name, int Digits);
 
     public record SymbolQuote(int SymbolId, decimal Bid, decimal Ask);
+
+    public record Position
+    {
+        public long Id { get; init; }
+
+        public int SymbolId { get; init; }
+
+        public string SymbolName { get; set; }
+
+        public decimal EntryPrice { get; init; }
+
+        public decimal Volume { get; init; }
+
+        public string TradeSide { get; init; }
+
+        public decimal StopLoss { get; init; }
+
+        public decimal TakeProfit { get; init; }
+
+        public bool? TrailingStopLoss { get; init; }
+
+        public string StopLossTriggerMethod { get; init; }
+
+        public bool? GuaranteedStopLoss { get; init; }
+    }
+
+    public record Order
+    {
+        public long Id { get; init; }
+
+        public string Type { get; init; }
+
+        public int SymbolId { get; init; }
+
+        public string SymbolName { get; set; }
+
+        public decimal TargetPrice { get; init; }
+
+        public decimal Volume { get; init; }
+
+        public string TradeSide { get; init; }
+
+        public DateTime Time { get; init; }
+
+        public DateTime? ExpireTime { get; init; }
+
+        public decimal StopLossInPips { get; init; }
+
+        public decimal TakeProfitInPips { get; init; }
+
+        public bool? TrailingStopLoss { get; init; }
+
+        public string StopLossTriggerMethod { get; init; }
+
+        public bool? GuaranteedStopLoss { get; init; }
+    }
 }

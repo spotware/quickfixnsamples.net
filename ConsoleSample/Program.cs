@@ -52,8 +52,7 @@ namespace ConsoleSample
 
                     if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
 
-                    Console.WriteLine("\nIncoming:");
-                    ShowMessageData(message);
+                    Console.WriteLine($"\nIncoming:\n{message.GetMessageText()}\n");
                 }), dataflowLinkOptions);
 
                 _application.OutgoingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
@@ -62,8 +61,7 @@ namespace ConsoleSample
 
                     if (messageType.Equals("0", StringComparison.OrdinalIgnoreCase) || messageType.Equals("1", StringComparison.OrdinalIgnoreCase) || messageType.Equals("A", StringComparison.OrdinalIgnoreCase)) return;
 
-                    Console.WriteLine("\nOutgoing:");
-                    ShowMessageData(message);
+                    Console.WriteLine($"\nOutgoing:\n{message.GetMessageText()}\n");
                 }), dataflowLinkOptions);
 
                 Run();
@@ -216,12 +214,6 @@ namespace ConsoleSample
 
                     break;
             }
-        }
-
-        private static void ShowMessageData<TMessage>(TMessage message) where TMessage : Message
-        {
-            Console.WriteLine(message.GetMessageText());
-            Console.WriteLine();
         }
 
         private static void SendNewOrderSingle(string[] fields)
