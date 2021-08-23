@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsSample", "WinFormsS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{99BC0F9F-E07C-4E11-B0DD-02C30388B254}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfSample", "WpfSample\WpfSample.csproj", "{3ED82ADD-5777-4789-88EC-4286CF51A79D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfSample", "WpfSample\WpfSample.csproj", "{3ED82ADD-5777-4789-88EC-4286CF51A79D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreSample", "AspNetCoreSample\AspNetCoreSample.csproj", "{49A5909B-A761-4874-BA00-97DEA7D96438}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3ED82ADD-5777-4789-88EC-4286CF51A79D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49A5909B-A761-4874-BA00-97DEA7D96438}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49A5909B-A761-4874-BA00-97DEA7D96438}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49A5909B-A761-4874-BA00-97DEA7D96438}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49A5909B-A761-4874-BA00-97DEA7D96438}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
