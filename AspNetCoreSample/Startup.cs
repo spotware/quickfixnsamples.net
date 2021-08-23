@@ -1,3 +1,4 @@
+using AspNetCoreSample.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace AspNetCoreSample
@@ -24,6 +26,10 @@ namespace AspNetCoreSample
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
+            services.AddSignalR(hubOptions => hubOptions.EnableDetailedErrors = true).AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +56,7 @@ namespace AspNetCoreSample
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
+                endpoints.MapHub<FixHub>("/fixHub");
             });
         }
     }
