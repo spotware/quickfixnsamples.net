@@ -10,7 +10,7 @@ namespace Common
 {
     public static class SessionSettingsFactory
     {
-        public static SessionSettings GetSessionSettings(string host, int port, string senderCompId, string senderSubId, string targetSubId)
+        public static SessionSettings GetSessionSettings(string host, int port, string senderCompId, string senderSubId, string targetSubId, string targetCompId)
         {
             var stringBuilder = new StringBuilder();
 
@@ -33,7 +33,7 @@ namespace Common
             stringBuilder.AppendLine($"SenderCompID={senderCompId}");
             stringBuilder.AppendLine($"SenderSubID={senderSubId}");
             stringBuilder.AppendLine($"TargetSubID={targetSubId}");
-            stringBuilder.AppendLine("TargetCompID=cServer");
+            stringBuilder.AppendLine($"TargetCompID={targetCompId}");
             stringBuilder.AppendLine("HeartBtInt=30");
 
             var stringReader = new StringReader(stringBuilder.ToString());

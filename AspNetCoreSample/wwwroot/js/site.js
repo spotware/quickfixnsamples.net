@@ -1,4 +1,50 @@
-﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿function isNumberInRange(object) {
+    var value = parseFloat(object.value);
+    var step = parseFloat(object.step);
 
-// Write your JavaScript code.
+    value = value - floatSafeRemainder(value, step);
+
+    object.value = value;
+
+    if (value > parseFloat(object.max))
+        object.value = object.max;
+    else if (value < parseFloat(object.min))
+        object.value = object.min;
+}
+
+function floatSafeRemainder(val, step) {
+    var valDecCount = (val.toString().split('.')[1] || '').length;
+    var stepDecCount = (step.toString().split('.')[1] || '').length;
+    var decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
+    var valInt = parseInt(val.toFixed(decCount).replace('.', ''));
+    var stepInt = parseInt(step.toFixed(decCount).replace('.', ''));
+    return (valInt % stepInt) / Math.pow(10, decCount);
+}
+
+function isNumeric(evt) {
+    var theEvent = evt || window.event;
+    var key = theEvent.keyCode || theEvent.which;
+    key = String.fromCharCode(key);
+    var regex = /[0-9]|\./;
+    if (!regex.test(key)) {
+        theEvent.returnValue = false;
+        if (theEvent.preventDefault) theEvent.preventDefault();
+    }
+}
+
+function showApiCredentialsModal() {
+    $("#apiCredentialsModal").modal({
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    $('#apiCredentialsModal').modal('toggle')
+}
+
+$(document).ready(function () {
+    $(document).on("click", "#apiCredentialsModalConnectButton", function () {
+        $('#apiCredentialsModal').modal('hide');
+    });
+
+    showApiCredentialsModal();
+});
