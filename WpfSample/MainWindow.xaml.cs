@@ -38,8 +38,11 @@ namespace WpfSample
         private const string _senderCompId = "demo.ctrader.3397885";
         private const string _senderSubId = "3397885";
 
-        private const string _tradeTargetSubID = "TRADE";
-        private const string _quoteTargetSubID = "QUOTE";
+        private const string _tradeTargetSubId = "TRADE";
+        private const string _quoteTargetSubId = "QUOTE";
+
+        private const string _tradeTargetCompId = "cServer";
+        private const string _quoteTargetCompId = "cServer";
 
         private readonly SocketInitiator _quoteInitiator;
         private readonly SocketInitiator _tradeInitiator;
@@ -51,8 +54,8 @@ namespace WpfSample
         {
             InitializeComponent();
 
-            _tradeApp = new(_username, _password, _senderCompId, _senderSubId, "cServer");
-            _quoteApp = new(_username, _password, _senderCompId, _senderSubId, "cServer");
+            _tradeApp = new(_username, _password, _senderCompId, _senderSubId, _tradeTargetCompId);
+            _quoteApp = new(_username, _password, _senderCompId, _senderSubId, _quoteTargetCompId);
 
             var incomingMessagesProcessingBlock = new ActionBlock<Message>(ProcessIncomingMessage);
             var outgoingMessagesProcessingBlock = new ActionBlock<Message>(ProcessOutgoingMessage);
@@ -65,8 +68,8 @@ namespace WpfSample
             _tradeApp.OutgoingMessagesBuffer.LinkTo(outgoingMessagesProcessingBlock, linkOptions);
             _quoteApp.OutgoingMessagesBuffer.LinkTo(outgoingMessagesProcessingBlock, linkOptions);
 
-            var tradeSettings = SessionSettingsFactory.GetSessionSettings(_host, _tradePort, _senderCompId, _senderSubId, _tradeTargetSubID);
-            var quoteSettings = SessionSettingsFactory.GetSessionSettings(_host, _quotePort, _senderCompId, _senderSubId, _quoteTargetSubID);
+            var tradeSettings = SessionSettingsFactory.GetSessionSettings(_host, _tradePort, _senderCompId, _senderSubId, _tradeTargetSubId, _tradeTargetCompId);
+            var quoteSettings = SessionSettingsFactory.GetSessionSettings(_host, _quotePort, _senderCompId, _senderSubId, _quoteTargetSubId, _quoteTargetCompId);
 
             var tradeStoreFactory = new FileStoreFactory(tradeSettings);
             var quoteStoreFactory = new FileStoreFactory(quoteSettings);

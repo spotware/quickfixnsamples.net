@@ -1,10 +1,253 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div>
+    <div class="row no-gutters m-0 p-0">
+        <div class="col-10 bg-dark m-2" id="order" tabindex="-1">
+            <div class="row text-white form-group">
+                <div class="col">
+                    <label for="orderSymbolsList">Symbol</label>
+                    <select id="orderSymbolsList" class="form-select">
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="orderDirectionList">Direction</label>
+                    <select id="orderDirectionList" class="form-select">
+                        <option value="Buy">Buy</option>
+                        <option value="Sell">Sell</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row text-white form-group">
+                <div class="col">
+                    <label for="orderTypeList">Type</label>
+                    <select id="orderTypeList" class="form-select">
+                        <option value="Market">Market</option>
+                        <option value="Limit">Limit</option>
+                        <option value="Stop">Stop</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="orderQuantityInput">Quantity (Units)</label>
+                    <input type="number" class="form-control" id="orderQuantityInput" onkeypress="return isNumeric(event)" min="0" value="0">
+                </div>
+            </div>
+            <div class="row text-white form-group">
+
+                <div class="col">
+                    <label for="orderPriceInput">Target Price</label>
+                    <input type="number" class="form-control" id="orderPriceInput" value="0" onkeypress="return isNumeric(event)" min="0">
+                </div>
+                <div class="col">
+                    <div class="form-check form-check-inline" for="orderExpiryDateTime">
+                        <input class="form-check-input" type="checkbox" id="orderExpiry">
+                        <label class="form-check-label" for="orderExpiry">Expiry</label>
+                    </div>
+                    <input type="datetime-local" id="orderExpiryDateTime" class="form-control" disabled>
+                </div>
+            </div>
+            <div class="row text-white form-group">
+                <div class="col">
+                    <label for="orderPositionIdInput">Position ID</label>
+                    <input type="number" class="form-control" id="orderPositionIdInput" onkeypress="return isNumeric(event)" min="0" value="0">
+                </div>
+                <div class="col">
+                    <label for="orderClOrdIdInput">ClOrd ID</label>
+                    <input type="number" class="form-control" id="orderClOrdIdInput" value="0" onkeypress="return isNumeric(event)" min="0">
+                </div>
+            </div>
+            <div class="text-white form-group">
+                <textarea class="form-control" maxlength="100" id="orderDesignationTextarea" rows="3" placeholder="Designation..."></textarea>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary" id="orderButton">Send New Order Request</button>
+            </div>
+        </div>
+
+        <div class="col d-grid gap-1 table-wrapper-scroll-y" style="height: 60vh;">
+            <table class="table table-hover table-dark table-striped" id="symbolsTable">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Bid</th>
+                        <th scope="col">Ask</th>
+                    </tr>
+                </thead>
+                <tbody id="symbolsTableBody" />
+            </table>
+        </div>
+    </div>
+    <div class="row no-gutters text-white w-100 m-0 p-0">
+        <ul class="nav nav-tabs" id="accountTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active text-muted" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions" type="button" role="tab" aria-controls="positions" aria-selected="true">Positions</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-muted" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Orders</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-muted" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">Logs</button>
+            </li>
+        </ul>
+        <div class="tab-content m-0 p-0" id="accountTabContent">
+            <div class="tab-pane fade show active" id="positions" role="tabpanel" aria-labelledby="positions-tab">
+                <div class="table-wrapper-scroll-y" style="height: 20vh;">
+                    <table class="table table-hover table-dark table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Symbol ID</th>
+                                <th scope="col">Symbol</th>
+                                <th scope="col">Direction</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">Entry Price</th>
+                                <th scope="col">SL</th>
+                                <th scope="col">TP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body" />
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+                <div class="table-wrapper-scroll-y" style="height: 20vh;">
+                    <table class="table table-hover table-dark table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Symbol ID</th>
+                                <th scope="col">Symbol</th>
+                                <th scope="col">Direction</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">Target Price</th>
+                                <th scope="col">SL</th>
+                                <th scope="col">TP</th>
+                                <th scope="col">Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body" />
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                <div class="table-wrapper-scroll-y" style="height: 20vh;">
+                    <table class="table table-hover table-dark table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th scope="col">Time</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body" />
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div id="toasts-container" aria-live="polite" aria-atomic="true" class="d-flex flex-column flex-wrap justify-content-start align-items-start" style="position: absolute; bottom: 0; right: 0;">
+</div>
+
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loadingModalTitle">Loading Data</h5>
+            </div>
+            <div class="modal-body">
+                <p>Please wait...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="apiCredentialsModal" tabindex="-1" role="dialog" aria-labelledby="apiCredentialsModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-white" id="apiCredentialsModalTitle">FIX API Credentials</h5>
+            </div>
+            <div class="modal-body pt-1 pb-1">
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiHostInput">Host</label>
+                        <input type="text" class="form-control" id="apiHostInput">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiQuotePortInput">Quote Port (Plain Text)</label>
+                        <input type="number" class="form-control" id="apiQuotePortInput" min="1" max="65535">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradePortInput">Trade Port (Plain Text)</label>
+                        <input type="number" class="form-control" id="apiTradePortInput" min="1" max="65535">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiQuoteSenderCompIdInput">Quote SenderCompId</label>
+                        <input type="text" class="form-control" id="apiQuoteSenderCompIdInput">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradeSenderCompIdInput">Trade SenderCompId</label>
+                        <input type="text" class="form-control" id="apiTradeSenderCompIdInput">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiQuoteSenderSubIdInput">Quote SenderSubId</label>
+                        <input type="text" class="form-control" id="apiQuoteSenderSubIdInput" value="QUOTE">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradeSenderSubIdInput">Trade SenderSubId</label>
+                        <input type="text" class="form-control" id="apiTradeSenderSubIdInput" value="TRADE">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiQuoteTargetCompIdInput">Quote TargetCompId</label>
+                        <input type="text" class="form-control" id="apiQuoteTargetCompIdInput" value="cServer">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradeTargetCompIdInput">Trade TargetCompId</label>
+                        <input type="text" class="form-control" id="apiTradeTargetCompIdInput" value="cServer">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
+                        <label class="form-check-label" for="apiUsernameInput">Username</label>
+                        <input type="text" class="form-control" id="apiUsernameInput">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiPasswordInput">Password</label>
+                        <input type="text" class="form-control" id="apiPasswordInput">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="apiCredentialsModalConnectButton">Connect</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="toast-template">
+    <div class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="rounded me-2" id="toast-icon"></i>
+            <strong class="me-auto" id="toast-title"></strong>
+            <small id="toast-title-small"></small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" />
+    </div>
+</template>
