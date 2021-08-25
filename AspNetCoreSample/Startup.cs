@@ -1,4 +1,5 @@
 using AspNetCoreSample.Hubs;
+using AspNetCoreSample.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -25,6 +26,7 @@ namespace AspNetCoreSample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ApiService>();
             services.AddRazorPages();
             services.AddSignalR(hubOptions => hubOptions.EnableDetailedErrors = true).AddJsonProtocol(options =>
             {

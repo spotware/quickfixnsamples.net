@@ -5,7 +5,7 @@
 
 <div>
     <div class="row no-gutters m-0 p-0">
-        <div class="col-10 bg-dark m-2" id="order" tabindex="-1">
+        <div class="col-8 bg-dark m-2" id="order" tabindex="-1">
             <div class="row text-white form-group">
                 <div class="col">
                     <label for="orderSymbolsList">Symbol</label>
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <div class="col d-grid gap-1 table-wrapper-scroll-y" style="height: 60vh;">
+        <div class="col d-grid gap-1 table-wrapper-scroll-y" style="height: 75vh;">
             <table class="table table-hover table-dark table-striped" id="symbolsTable">
                 <thead>
                     <tr>
@@ -109,7 +109,7 @@
                                 <th scope="col">TP</th>
                             </tr>
                         </thead>
-                        <tbody id="positions-table-body" />
+                        <tbody id="positionsTableBody" />
                     </table>
                 </div>
             </div>
@@ -131,7 +131,7 @@
                                 <th scope="col">Expiry</th>
                             </tr>
                         </thead>
-                        <tbody id="orders-table-body" />
+                        <tbody id="ordersTableBody" />
                     </table>
                 </div>
             </div>
@@ -145,7 +145,7 @@
                                 <th scope="col">Message</th>
                             </tr>
                         </thead>
-                        <tbody id="logs-table-body" />
+                        <tbody id="logsTableBody" />
                     </table>
                 </div>
             </div>
@@ -153,14 +153,11 @@
     </div>
 </div>
 
-<div id="toasts-container" aria-live="polite" aria-atomic="true" class="d-flex flex-column flex-wrap justify-content-start align-items-start" style="position: absolute; bottom: 0; right: 0;">
-</div>
-
 <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="loadingModalTitle">Loading Data</h5>
+                <h5 class="modal-title" id="loadingModalTitle">Loading</h5>
             </div>
             <div class="modal-body">
                 <p>Please wait...</p>
@@ -178,28 +175,32 @@
             <div class="modal-body pt-1 pb-1">
                 <div class="row text-white form-group">
                     <div class="col">
-                        <label class="form-check-label" for="apiHostInput">Host</label>
-                        <input type="text" class="form-control" id="apiHostInput">
+                        <label class="form-check-label" for="apiQuoteHostInput">Quote Host Name</label>
+                        <input type="text" class="form-control" id="apiQuoteHostInput" value="h28.p.ctrader.com">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradeHostInput">Trade Host Name</label>
+                        <input type="text" class="form-control" id="apiTradeHostInput" value="h28.p.ctrader.com">
                     </div>
                 </div>
                 <div class="row text-white form-group">
                     <div class="col">
                         <label class="form-check-label" for="apiQuotePortInput">Quote Port (Plain Text)</label>
-                        <input type="number" class="form-control" id="apiQuotePortInput" min="1" max="65535">
+                        <input type="number" class="form-control" id="apiQuotePortInput" min="1" max="65535" value="5201">
                     </div>
                     <div class="col">
                         <label class="form-check-label" for="apiTradePortInput">Trade Port (Plain Text)</label>
-                        <input type="number" class="form-control" id="apiTradePortInput" min="1" max="65535">
+                        <input type="number" class="form-control" id="apiTradePortInput" min="1" max="65535" value="5202">
                     </div>
                 </div>
                 <div class="row text-white form-group">
                     <div class="col">
                         <label class="form-check-label" for="apiQuoteSenderCompIdInput">Quote SenderCompId</label>
-                        <input type="text" class="form-control" id="apiQuoteSenderCompIdInput">
+                        <input type="text" class="form-control" id="apiQuoteSenderCompIdInput" value="demo.ctrader.3397885">
                     </div>
                     <div class="col">
                         <label class="form-check-label" for="apiTradeSenderCompIdInput">Trade SenderCompId</label>
-                        <input type="text" class="form-control" id="apiTradeSenderCompIdInput">
+                        <input type="text" class="form-control" id="apiTradeSenderCompIdInput" value="demo.ctrader.3397885">
                     </div>
                 </div>
                 <div class="row text-white form-group">
@@ -224,12 +225,22 @@
                 </div>
                 <div class="row text-white form-group">
                     <div class="col">
+                        <label class="form-check-label" for="apiQuoteTargetSubIdInput">Quote SenderSubId</label>
+                        <input type="text" class="form-control" id="apiQuoteTargetSubIdInput" value="QUOTE">
+                    </div>
+                    <div class="col">
+                        <label class="form-check-label" for="apiTradeTargetSubIdInput">Trade SenderSubId</label>
+                        <input type="text" class="form-control" id="apiTradeTargetSubIdInput" value="TRADE">
+                    </div>
+                </div>
+                <div class="row text-white form-group">
+                    <div class="col">
                         <label class="form-check-label" for="apiUsernameInput">Username</label>
-                        <input type="text" class="form-control" id="apiUsernameInput">
+                        <input type="text" class="form-control" id="apiUsernameInput" value="3397885">
                     </div>
                     <div class="col">
                         <label class="form-check-label" for="apiPasswordInput">Password</label>
-                        <input type="text" class="form-control" id="apiPasswordInput">
+                        <input type="text" class="form-control" id="apiPasswordInput" value="3397885">
                     </div>
                 </div>
             </div>
@@ -238,6 +249,9 @@
             </div>
         </div>
     </div>
+</div>
+
+<div id="toasts-container" aria-live="polite" aria-atomic="true" class="d-flex flex-column flex-wrap justify-content-start align-items-start" style="position: absolute; bottom: 0; right: 0;">
 </div>
 
 <template id="toast-template">
