@@ -10,7 +10,6 @@
     Width="1000"
     Height="750"
     Closing="Window_Closing"
-    Loaded="Window_Loaded"
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>

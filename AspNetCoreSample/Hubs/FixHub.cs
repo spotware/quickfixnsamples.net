@@ -65,5 +65,27 @@ namespace AspNetCoreSample.Hubs
                 }
             }
         }
+
+        public async IAsyncEnumerable<Position> Positions([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            while (await _apiService.PositionReportChannel.Reader.WaitToReadAsync(cancellationToken))
+            {
+                while (_apiService.PositionReportChannel.Reader.TryRead(out var position))
+                {
+                    yield return position;
+                }
+            }
+        }
+
+        public async IAsyncEnumerable<ExecutionReport> ExecutionReport([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            while (await _apiService.ExecutionReportChannel.Reader.WaitToReadAsync(cancellationToken))
+            {
+                while (_apiService.ExecutionReportChannel.Reader.TryRead(out var executionReport))
+                {
+                    yield return executionReport;
+                }
+            }
+        }
     }
 }

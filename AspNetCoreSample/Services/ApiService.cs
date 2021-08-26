@@ -68,6 +68,8 @@ namespace AspNetCoreSample.Services
 
         private async Task ProcessOutgoingMessage(Message message)
         {
+            if (message is QuickFix.FIX44.MarketDataRequest) return;
+
             await LogsChannel.Writer.WriteAsync(new("Sent", DateTimeOffset.UtcNow, message.ToString('|')));
         }
 
@@ -111,6 +113,8 @@ namespace AspNetCoreSample.Services
 
             if (order.Type.Equals("Market", StringComparison.OrdinalIgnoreCase) && executionReport.CumQty.getValue() > 0)
             {
+                await PositionReportChannel.Writer.WriteAsync(null);
+
                 SendPositionsRequest();
             }
             else if (order.Type.Equals("Market", StringComparison.OrdinalIgnoreCase) is false)
@@ -119,7 +123,7 @@ namespace AspNetCoreSample.Services
 
                 var executionType = executionReport.ExecType.getValue();
 
-                await ExecutionReportChannel.Writer.WriteAsync(new("ExecutionReport", order));
+                await ExecutionReportChannel.Writer.WriteAsync(new(executionType, order));
             }
         }
 
@@ -148,6 +152,9 @@ namespace AspNetCoreSample.Services
         {
             _symbols = securityList.GetSymbols().OrderBy(symbol => symbol.Id).ToArray();
 
+            SendPositionsRequest();
+            SendOrderMassStatusRequest();
+
             foreach (var symbol in _symbols)
             {
                 await SecurityChannel.Writer.WriteAsync(symbol);
@@ -156,9 +163,6 @@ namespace AspNetCoreSample.Services
             }
 
             SecurityChannel.Writer.TryComplete();
-
-            SendPositionsRequest();
-            SendOrderMassStatusRequest();
         }
 
         private void SendSecurityListRequest()
@@ -204,5 +208,5 @@ namespace AspNetCoreSample.Services
 
     public record Log(string Type, DateTimeOffset Time, string Message);
 
-    public record ExecutionReport(string Type, Order Order);
+    public record ExecutionReport(char Type, Order Order);
 }

@@ -83,12 +83,18 @@ namespace WpfSample
             DataContext = MainModel;
         }
 
-        private async void AddLog(LogModel log) => await Dispatcher.InvokeAsync(() =>
-        {
-            MainModel.Logs.Add(log);
-        });
-
         public MainModel MainModel { get; } = new MainModel();
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _tradeApp.Dispose();
+
+            _tradeInitiator.Stop();
+
+            _quoteApp.Dispose();
+
+            _quoteInitiator.Stop();
+        }
 
         private void ProcessOutgoingMessage(Message message)
         {
@@ -102,6 +108,13 @@ namespace WpfSample
             if (message is not QuickFix.FIX44.MarketDataSnapshotFullRefresh)
             {
                 AddLog(new LogModel("Received", DateTime.Now, message.ToString('|')));
+            }
+
+            if (message is QuickFix.FIX44.Logon && message.Header.IsSetField(50) && message.Header.GetString(50).Equals("TRADE", StringComparison.OrdinalIgnoreCase) && _tradeInitiator.IsLoggedOn)
+            {
+                SendSecurityListRequest();
+
+                return;
             }
 
             switch (message)
@@ -178,13 +191,6 @@ namespace WpfSample
             SendOrderMassStatusRequest();
         }
 
-        private void SendOrderMassStatusRequest()
-        {
-            QuickFix.FIX44.OrderMassStatusRequest message = new(new MassStatusReqID("Orders"), new MassStatusReqType(7));
-
-            _tradeApp.SendMessage(message);
-        }
-
         private void OnMarketDataSnapshotFullRefresh(QuickFix.FIX44.MarketDataSnapshotFullRefresh marketDataSnapshotFullRefresh)
         {
             var symbolQuote = marketDataSnapshotFullRefresh.GetSymbolQuote();
@@ -196,6 +202,13 @@ namespace WpfSample
                 symbol.Bid = symbolQuote.Bid;
                 symbol.Ask = symbolQuote.Ask;
             }
+        }
+
+        private void SendOrderMassStatusRequest()
+        {
+            QuickFix.FIX44.OrderMassStatusRequest message = new(new MassStatusReqID("Orders"), new MassStatusReqType(7));
+
+            _tradeApp.SendMessage(message);
         }
 
         private void SendMarketDataRequest(bool subscribe, int symbolId)
@@ -211,13 +224,6 @@ namespace WpfSample
             message.AddGroup(symbolGroup);
 
             _quoteApp.SendMessage(message);
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            QuickFix.FIX44.SecurityListRequest securityListRequest = new(new SecurityReqID("symbols"), new SecurityListRequestType(0));
-
-            _tradeApp.SendMessage(securityListRequest);
         }
 
         private void SendNewOrderButton_Click(object sender, RoutedEventArgs e)
@@ -288,15 +294,16 @@ namespace WpfSample
             _tradeApp.SendMessage(message);
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void SendSecurityListRequest()
         {
-            _tradeApp.Dispose();
+            QuickFix.FIX44.SecurityListRequest securityListRequest = new(new SecurityReqID("symbols"), new SecurityListRequestType(0));
 
-            _tradeInitiator.Stop();
-
-            _quoteApp.Dispose();
-
-            _quoteInitiator.Stop();
+            _tradeApp.SendMessage(securityListRequest);
         }
+
+        private async void AddLog(LogModel log) => await Dispatcher.InvokeAsync(() =>
+        {
+            MainModel.Logs.Add(log);
+        });
     }
 }

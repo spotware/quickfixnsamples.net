@@ -120,6 +120,57 @@ $(document).ready(function () {
                 },
                 error: onError,
             });
+
+        connection.stream("Positions")
+            .subscribe({
+                next: position => {
+                    if (position == null) {
+                        $('#positionsTableBody').html('');
+                        return;
+                    }
+                    var row = `<tr id="${position.id}">
+                            <td>${position.id}</td>
+                            <td>${position.symbolId}</td>
+                            <td>${position.symbolName}</td>
+                            <td>${position.tradeSide}</td>
+                            <td>${position.volume}</td>
+                            <td>${position.entryPrice}</td>
+                            <td>${position.stopLoss}</td>
+                            <td>${position.takeProfit}</td>
+                            </tr>`;
+
+                    $('#positionsTableBody').append(row);
+                },
+                complete: () => { },
+                error: onError,
+            });
+
+        connection.stream("ExecutionReport")
+            .subscribe({
+                next: executionReport => {
+                    $(`#ordersTableBody tr#${executionReport.order.id}`).remove();
+
+                    if (executionReport.type != '4' && executionReport.type != '8' && executionReport.type != 'C' && executionReport.type != 'F') {
+                        var row = `<tr id="${executionReport.order.id}">
+                            <td>${executionReport.order.id}</td>
+                            <td>${executionReport.order.symbolId}</td>
+                            <td>${executionReport.order.symbolName}</td>
+                            <td>${executionReport.order.tradeSide}</td>
+                            <td>${executionReport.order.volume}</td>
+                            <td>${executionReport.order.type}</td>
+                            <td>${executionReport.order.time}</td>
+                            <td>${executionReport.order.targetPrice}</td>
+                            <td>${executionReport.order.stopLossInPips}</td>
+                            <td>${executionReport.order.takeProfitInPips}</td>
+                            <td>${executionReport.order.expireTime == null ? '' : executionReport.order.expireTime}</td>
+                            </tr>`;
+
+                        $('#ordersTableBody').append(row);
+                    }
+                },
+                complete: () => { },
+                error: onError,
+            });
     }).catch(onError);
 
     $(document).on("click", "#apiCredentialsModalConnectButton", function () {
