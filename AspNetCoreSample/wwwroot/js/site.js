@@ -76,9 +76,32 @@ function onError(error) {
 $(document).ready(function () {
     var connection = new signalR.HubConnectionBuilder().withUrl("/fixHub").build();
 
-    connection.start().then(() => {
-        showApiCredentialsModal();
+    connection.start().then(showApiCredentialsModal).catch(onError);
 
+    $(document).on("click", "#apiCredentialsModalConnectButton", function () {
+        $('#apiCredentialsModal').modal('hide');
+
+        showLoadingModal();
+
+        connection.invoke("Connect", {
+            "QuoteHost": $("#apiQuoteHostInput").val(),
+            "TradeHost": $("#apiTradeHostInput").val(),
+            "QuotePort": parseInt($('#apiQuotePortInput').val()),
+            "TradePort": parseInt($('#apiTradePortInput').val()),
+            "QuoteSenderCompId": $("#apiQuoteSenderCompIdInput").val(),
+            "TradeSenderCompId": $("#apiTradeSenderCompIdInput").val(),
+            "QuoteSenderSubId": $("#apiQuoteSenderSubIdInput").val(),
+            "TradeSenderSubId": $("#apiTradeSenderSubIdInput").val(),
+            "QuoteTargetCompId": $("#apiQuoteTargetCompIdInput").val(),
+            "TradeTargetCompId": $("#apiTradeTargetCompIdInput").val(),
+            "QuoteTargetSubId": $("#apiQuoteTargetSubIdInput").val(),
+            "TradeTargetSubId": $("#apiTradeTargetSubIdInput").val(),
+            "Username": $("#apiUsernameInput").val(),
+            "Password": $("#apiPasswordInput").val()
+        }).catch(onError);
+    });
+
+    connection.on("Connected", function () {
         connection.stream("Logs")
             .subscribe({
                 next: log => {
@@ -171,32 +194,7 @@ $(document).ready(function () {
                 complete: () => { },
                 error: onError,
             });
-    }).catch(onError);
 
-    $(document).on("click", "#apiCredentialsModalConnectButton", function () {
-        $('#apiCredentialsModal').modal('hide');
-
-        showLoadingModal();
-
-        connection.invoke("Connect", {
-            "QuoteHost": $("#apiQuoteHostInput").val(),
-            "TradeHost": $("#apiTradeHostInput").val(),
-            "QuotePort": parseInt($('#apiQuotePortInput').val()),
-            "TradePort": parseInt($('#apiTradePortInput').val()),
-            "QuoteSenderCompId": $("#apiQuoteSenderCompIdInput").val(),
-            "TradeSenderCompId": $("#apiTradeSenderCompIdInput").val(),
-            "QuoteSenderSubId": $("#apiQuoteSenderSubIdInput").val(),
-            "TradeSenderSubId": $("#apiTradeSenderSubIdInput").val(),
-            "QuoteTargetCompId": $("#apiQuoteTargetCompIdInput").val(),
-            "TradeTargetCompId": $("#apiTradeTargetCompIdInput").val(),
-            "QuoteTargetSubId": $("#apiQuoteTargetSubIdInput").val(),
-            "TradeTargetSubId": $("#apiTradeTargetSubIdInput").val(),
-            "Username": $("#apiUsernameInput").val(),
-            "Password": $("#apiPasswordInput").val()
-        }).catch(onError);
-    });
-
-    connection.on("Connected", function () {
         $('#loadingModal').modal('hide');
     });
 });
