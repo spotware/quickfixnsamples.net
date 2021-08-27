@@ -168,6 +168,66 @@ namespace AspNetCoreSample.Services
             SecurityChannel.Writer.TryComplete();
         }
 
+        public void SendNewOrderRequest(NewOrderRequestParameters parameters)
+        {
+            var ordType = new OrdType(parameters.Type.ToLowerInvariant() switch
+            {
+                "market" => OrdType.MARKET,
+                "limit" => OrdType.LIMIT,
+                "stop" => OrdType.STOP,
+                _ => throw new Exception("unsupported input"),
+            });
+
+            var message = new QuickFix.FIX44.NewOrderSingle(
+                new ClOrdID(parameters.ClOrdId),
+                new QuickFix.Fields.Symbol(parameters.SymbolId.ToString(CultureInfo.InvariantCulture)),
+                new Side(parameters.TradeSide.ToLowerInvariant().Equals("buy", StringComparison.OrdinalIgnoreCase) ? '1' : '2'),
+                new TransactTime(DateTime.Now),
+                ordType);
+
+            message.Set(new OrderQty(Convert.ToDecimal(parameters.Quantity)));
+
+            if (ordType.getValue() != OrdType.MARKET)
+            {
+                message.Set(new TimeInForce('1'));
+
+                if (parameters.TargetPrice.HasValue)
+                {
+                    if (ordType.getValue() == OrdType.LIMIT)
+                    {
+                        message.Set(new Price(Convert.ToDecimal(parameters.TargetPrice)));
+                    }
+                    else
+                    {
+                        message.Set(new StopPx(Convert.ToDecimal(parameters.TargetPrice)));
+                    }
+                }
+
+                if (parameters.Expiry.HasValue)
+                {
+                    message.Set(new ExpireTime(parameters.Expiry.Value));
+                }
+            }
+            else
+            {
+                message.Set(new TimeInForce('3'));
+
+                if (parameters.PositionId.HasValue)
+                {
+                    message.SetField(new StringField(721, parameters.PositionId.Value.ToString(CultureInfo.InvariantCulture)));
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(parameters.Designation) is false)
+            {
+                message.Set(new Designation(parameters.Designation));
+            }
+
+            message.Header.GetString(Tags.BeginString);
+
+            _tradeApp.SendMessage(message);
+        }
+
         private void SendSecurityListRequest()
         {
             QuickFix.FIX44.SecurityListRequest securityListRequest = new(new SecurityReqID("symbols"), new SecurityListRequestType(0));
@@ -212,4 +272,15 @@ namespace AspNetCoreSample.Services
     public record Log(string Type, DateTimeOffset Time, string Message);
 
     public record ExecutionReport(char Type, Order Order);
+
+    public record NewOrderRequestParameters(string Type, string ClOrdId, int SymbolId, string TradeSide, decimal Quantity)
+    {
+        public double? TargetPrice { get; init; }
+
+        public DateTime? Expiry { get; init; }
+
+        public long? PositionId { get; init; }
+
+        public string Designation { get; init; }
+    }
 }

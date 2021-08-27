@@ -121,13 +121,23 @@ $(document).ready(function () {
                 next: symbol => {
                     var row = `<tr id="${symbol.id}">
                             <td>${symbol.id}</td>
-                            <td>${symbol.name}</td>
+                            <td id="name">${symbol.name}</td>
                             <td id="bid"></td>
                             <td id="ask"></td></tr>`;
 
                     $('#symbolsTableBody').append(row);
                 },
                 complete: () => {
+                    var symbolOptions = '';
+
+                    $('#symbolsTableBody > tr').each((index, element) => {
+                        var name = $(element).find('#name').text();
+
+                        symbolOptions += `<option value="${name}" id="${element.id}">${name}</option>`;
+                    });
+
+                    $('#orderSymbolsList').html(symbolOptions);
+
                     connection.stream("SymbolQuotes")
                         .subscribe({
                             next: quote => {
@@ -194,6 +204,20 @@ $(document).ready(function () {
                 complete: () => { },
                 error: onError,
             });
+
+        $('#newOrderButton').click(() => {
+            connection.invoke("SendNewOrderRequest", {
+                "Type": $('#orderTypeList').val(),
+                "ClOrdId": $('#orderClOrdIdInput').val(),
+                "SymbolId": parseInt($('#orderSymbolsList').find('option:selected').attr('id')),
+                "TradeSide": $('#orderDirectionList').val(),
+                "Quantity": parseFloat($('#orderQuantityInput').val()),
+                "TargetPrice": $('#orderPriceInput').val() == "0" ? null : parseFloat($('#orderPriceInput').val()),
+                "Expiry": $('#orderExpiryDateTime').val() == "" ? null : new Date($('#orderExpiryDateTime').val()).toISOString(),
+                "PositionId": $('#orderPositionIdInput').val() == "0" ? null : parseInt($('#orderPositionIdInput').val()),
+                "Designation": $('#orderDesignationTextarea').val()
+            }).catch(onError);
+        });
 
         $('#loadingModal').modal('hide');
     });

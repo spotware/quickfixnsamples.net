@@ -35,6 +35,13 @@ namespace AspNetCoreSample.Hubs
             return base.OnDisconnectedAsync(exception);
         }
 
+        public void SendNewOrderRequest(NewOrderRequestParameters parameters)
+        {
+            var client = _apiService.GetClient(Context.ConnectionId);
+
+            client.SendNewOrderRequest(parameters);
+        }
+
         public async IAsyncEnumerable<Log> Logs([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var client = _apiService.GetClient(Context.ConnectionId);

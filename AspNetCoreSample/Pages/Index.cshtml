@@ -41,11 +41,8 @@
                     <input type="number" class="form-control" id="orderPriceInput" value="0" onkeypress="return isNumeric(event)" min="0">
                 </div>
                 <div class="col">
-                    <div class="form-check form-check-inline" for="orderExpiryDateTime">
-                        <input class="form-check-input" type="checkbox" id="orderExpiry">
-                        <label class="form-check-label" for="orderExpiry">Expiry</label>
-                    </div>
-                    <input type="datetime-local" id="orderExpiryDateTime" class="form-control" disabled>
+                    <label class="form-check-label" for="orderExpiryDateTime">Expiry</label>
+                    <input type="datetime-local" id="orderExpiryDateTime" class="form-control">
                 </div>
             </div>
             <div class="row text-white form-group">
@@ -55,14 +52,14 @@
                 </div>
                 <div class="col">
                     <label for="orderClOrdIdInput">ClOrd ID</label>
-                    <input type="number" class="form-control" id="orderClOrdIdInput" value="0" onkeypress="return isNumeric(event)" min="0">
+                    <input type="text" class="form-control" id="orderClOrdIdInput" value="NewOrder">
                 </div>
             </div>
             <div class="text-white form-group">
                 <textarea class="form-control" maxlength="100" id="orderDesignationTextarea" rows="3" placeholder="Designation..."></textarea>
             </div>
             <div>
-                <button type="button" class="btn btn-primary" id="orderButton">Send New Order Request</button>
+                <button type="button" class="btn btn-primary" id="newOrderButton">Send New Order Request</button>
             </div>
         </div>
 
