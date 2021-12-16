@@ -85,7 +85,7 @@ namespace ConsoleSample
                 {
                     var cmd = QueryAction();
 
-                    if (cmd is null) return;
+                    if (cmd is null) continue;
 
                     var action = cmd[0].ToCharArray()[0];
 
