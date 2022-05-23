@@ -46,7 +46,7 @@ namespace ConsoleSample
 
                 var dataflowLinkOptions = new DataflowLinkOptions { PropagateCompletion = true };
 
-                _application.IncomingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
+                _ = _application.IncomingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
                 {
                     var messageType = message.Header.GetString(35);
 
@@ -55,7 +55,7 @@ namespace ConsoleSample
                     Console.WriteLine($"\nIncoming:\n{message.GetMessageText()}\n");
                 }), dataflowLinkOptions);
 
-                _application.OutgoingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
+                _ = _application.OutgoingMessagesBuffer.LinkTo(new ActionBlock<Message>(message =>
                 {
                     var messageType = message.Header.GetString(35);
 
@@ -109,7 +109,7 @@ namespace ConsoleSample
                             _initiator.Stop();
                         }
                     }
-                    else if (action == 'q' || action == 'Q')
+                    else if (action is 'q' or 'Q')
                         break;
 
                     ExecuteAction(action, cmd.Skip(1).ToArray());
@@ -150,7 +150,7 @@ namespace ConsoleSample
                 + "Action: "
             );
 
-            string cmd = Console.ReadLine().Trim();
+            var cmd = Console.ReadLine().Trim();
 
             if (string.IsNullOrWhiteSpace(cmd)) return default;
 
@@ -160,9 +160,9 @@ namespace ConsoleSample
 
             HashSet<string> validActions = new("1,2,3,4,5,6,7,8,q,Q,g,x".Split(','));
 
-            if (action.Length != 1 || validActions.Contains(action) == false) throw new InvalidOperationException("Invalid action");
-
-            return cmdSplit;
+            return action.Length != 1 || validActions.Contains(action) == false
+                ? throw new InvalidOperationException("Invalid action")
+                : cmdSplit;
         }
 
         private static void ExecuteAction(char action, string[] fields)
@@ -271,8 +271,6 @@ namespace ConsoleSample
                 message.Set(new Designation(fields[8]));
             }
 
-            message.Header.GetString(Tags.BeginString);
-
             _application.SendMessage(message);
         }
 
@@ -333,7 +331,7 @@ namespace ConsoleSample
             QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup bidMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('0') };
             QuickFix.FIX44.MarketDataRequest.NoMDEntryTypesGroup offerMarketDataEntryGroup = new() { MDEntryType = new MDEntryType('1') };
 
-            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new() { Symbol = new Symbol(fields[0]) };
+            QuickFix.FIX44.MarketDataRequest.NoRelatedSymGroup symbolGroup = new() { Symbol = new Symbol(fields[0]), };
 
             QuickFix.FIX44.MarketDataRequest message = new(mdReqID, subType, marketDepth);
 
